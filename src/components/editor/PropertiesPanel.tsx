@@ -67,7 +67,7 @@ export default function PropertiesPanel({ element, slide, onUpdateElement, onUpd
               </div>
               <div>
                 <Label className="text-[10px]">Rotation</Label>
-                <Slider value={[element.rotation]} min={-180} max={180} step={1} onValueChange={v => onUpdateElement(element.id, { rotation: v[0] })} />
+                <Slider value={[element.rotation]} min={-180} max={180} step={1} onValueChange={(v) => onUpdateElement(element.id, { rotation: Array.isArray(v) ? v[0] : v })} />
               </div>
             </div>
 
@@ -121,7 +121,7 @@ export default function PropertiesPanel({ element, slide, onUpdateElement, onUpd
                 <div><Label className="text-[10px]">Border</Label><Input type="color" value={elStyle.borderColor || '#000000'} onChange={e => updateStyle('borderColor', e.target.value)} data-testid="prop-border-color" /></div>
                 <div><Label className="text-[10px]">Border Width</Label><Input type="number" value={elStyle.borderWidth || 0} onChange={e => updateStyle('borderWidth', Number(e.target.value))} data-testid="prop-border-width" /></div>
                 <div><Label className="text-[10px]">Border Radius</Label><Input type="number" value={elStyle.borderRadius || 0} onChange={e => updateStyle('borderRadius', Number(e.target.value))} data-testid="prop-radius" /></div>
-                <div><Label className="text-[10px]">Opacity</Label><Slider value={[elStyle.opacity ?? 1]} min={0} max={1} step={0.05} onValueChange={v => updateStyle('opacity', v[0])} /></div>
+                <div><Label className="text-[10px]">Opacity</Label><Slider value={[elStyle.opacity ?? 1]} min={0} max={1} step={0.05} onValueChange={(v) => updateStyle('opacity', Array.isArray(v) ? v[0] : v)} /></div>
               </div>
             )}
 

@@ -55,8 +55,6 @@ export default function PresentPage() {
   const slide = slides[currentIndex];
   if (!slide) return <div className="h-screen flex items-center justify-center bg-black text-white">Loading...</div>;
 
-  const content = typeof slide.content === 'string' ? JSON.parse(slide.content) : slide.content;
-
   return (
     <div className="h-screen w-screen bg-black flex flex-col" data-testid="presenter-page">
       {/* Top bar */}

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, FileText, Trash2, Edit, Presentation } from 'lucide-react';
 import type { Deck } from '@/types';
 
@@ -48,11 +48,9 @@ export default function HomePage() {
           <h1 className="text-xl font-bold text-zinc-900" data-testid="app-title">MyDecks</h1>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button data-testid="new-deck-btn">
-              <Plus className="h-4 w-4 mr-1" /> New Deck
-            </Button>
-          </DialogTrigger>
+          <Button onClick={() => setOpen(true)} data-testid="new-deck-btn">
+            <Plus className="h-4 w-4 mr-1" /> New Deck
+          </Button>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Deck</DialogTitle>

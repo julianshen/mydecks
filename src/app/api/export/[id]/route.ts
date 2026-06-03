@@ -63,7 +63,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const buffer = await pptx.write({ outputType: 'nodebuffer' }) as Buffer;
 
-  return new NextResponse(buffer, {
+  return new NextResponse(buffer as any, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'Content-Disposition': `attachment; filename="${deck.title.replace(/[^a-zA-Z0-9]/g, '_')}.pptx"`,

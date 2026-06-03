@@ -52,7 +52,7 @@ export default function Toolbar({
 
       {tools.map(tool => (
         <Tooltip key={tool.mode}>
-          <TooltipTrigger asChild>
+          <TooltipTrigger>
             <Button
               variant={editorState.mode === tool.mode ? 'secondary' : 'ghost'}
               size="sm"
@@ -69,7 +69,7 @@ export default function Toolbar({
       <Separator orientation="vertical" className="h-6 mx-1" />
 
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger>
           <Button variant={editorState.showGrid ? 'secondary' : 'ghost'} size="sm" onClick={onToggleGrid} data-testid="tool-grid">
             <Grid3X3 className="h-4 w-4" />
           </Button>
@@ -78,7 +78,7 @@ export default function Toolbar({
       </Tooltip>
 
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger>
           <Button variant={editorState.snapToGrid ? 'secondary' : 'ghost'} size="sm" onClick={onToggleSnap} data-testid="tool-snap">
             <Layers className="h-4 w-4" />
           </Button>
