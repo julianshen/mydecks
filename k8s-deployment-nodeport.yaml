@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mydecks
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mydecks
+  template:
+    metadata:
+      labels:
+        app: mydecks
+    spec:
+      containers:
+      - name: mydecks
+        image: mydecks:k3s
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 3000
+        env:
+        - name: HOSTNAME
+          value: "0.0.0.0"
+        - name: DB_PATH
+          value: "/app/data/mydecks.db"
+        volumeMounts:
+        - name: data
+          mountPath: /app/data
+      volumes:
+      - name: data
+        persistentVolumeClaim:
+          claimName: mydecks-data
+      nodeSelector:
+        kubernetes.io/hostname: julianshen-pc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mydecks
+  namespace: default
+spec:
+  selector:
+    app: mydecks
+  ports:
+  - port: 3000
+    targetPort: 3000
+    nodePort: 30010
+  type: NodePort
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mydecks-data
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
