@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
       - name: mydecks
-        image: mydecks:k3s
-        imagePullPolicy: Never
+        image: ghcr.io/julianshen/mydecks:main
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
         env:
@@ -31,8 +31,8 @@ spec:
       - name: data
         persistentVolumeClaim:
           claimName: mydecks-data
-      nodeSelector:
-        kubernetes.io/hostname: friday
+      imagePullSecrets:
+      - name: ghcr-secret
 ---
 apiVersion: v1
 kind: Service
@@ -45,7 +45,7 @@ spec:
   ports:
   - port: 3000
     targetPort: 3000
-    nodePort: 30010
+    nodePort: 30487
   type: NodePort
 ---
 apiVersion: v1
