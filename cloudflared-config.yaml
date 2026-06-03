@@ -1,0 +1,6 @@
+tunnel: 8256f93a-8878-45de-b8c1-adff49ea6c5a
+credentials-file: /etc/cloudflared/credentials.json
+ingress:
+  - hostname: mydecks.jlnshen.com
+    service: http://mydecks.default.svc.cluster.local:3000
+  - service: http_status:404
