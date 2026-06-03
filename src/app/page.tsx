@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Plus, FileText, Trash2, Edit, Presentation } from 'lucide-react';
 import type { Deck } from '@/types';
 
@@ -47,26 +46,9 @@ export default function HomePage() {
           <Presentation className="h-6 w-6 text-zinc-800" />
           <h1 className="text-xl font-bold text-zinc-900" data-testid="app-title">MyDecks</h1>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <Button onClick={() => setOpen(true)} data-testid="new-deck-btn">
-            <Plus className="h-4 w-4 mr-1" /> New Deck
-          </Button>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Deck</DialogTitle>
-            </DialogHeader>
-            <div className="flex gap-2 mt-4">
-              <Input
-                placeholder="Deck title..."
-                value={newTitle}
-                onChange={e => setNewTitle(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && createDeck()}
-                data-testid="deck-title-input"
-              />
-              <Button onClick={createDeck} data-testid="create-deck-btn">Create</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => setOpen(true)} data-testid="new-deck-btn">
+          <Plus className="h-4 w-4 mr-1" /> New Deck
+        </Button>
       </header>
 
       <main className="max-w-6xl mx-auto p-6">
@@ -103,6 +85,26 @@ export default function HomePage() {
           </div>
         )}
       </main>
+
+      {/* Simple Modal without Portal/Overlay */}
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="deck-dialog">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
+          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm mx-4">
+            <h2 className="text-lg font-semibold mb-4">Create New Deck</h2>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Deck title..."
+                value={newTitle}
+                onChange={e => setNewTitle(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && createDeck()}
+                data-testid="deck-title-input"
+              />
+              <Button onClick={createDeck} data-testid="create-deck-btn">Create</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

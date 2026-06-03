@@ -18,9 +18,10 @@ test.describe('Editor', () => {
   });
 
   test('should add a new slide', async ({ page }) => {
+    const initialCount = await page.locator('[data-testid^="slide-thumb-"]').count();
     await page.getByTestId('add-slide-btn').click();
-    // Should have at least 2 slides now
-    await expect(page.locator('[data-testid^="slide-thumb-"]')).toHaveCount(2);
+    // Should have one more slide now
+    await expect(page.locator('[data-testid^="slide-thumb-"]')).toHaveCount(initialCount + 1);
   });
 
   test('should add text element to canvas', async ({ page }) => {
@@ -50,6 +51,9 @@ test.describe('Editor', () => {
   });
 
   test('should select and delete element', async ({ page }) => {
+    // Get initial count
+    const initialCount = await page.locator('[data-element-type="text"]').count();
+    
     // Add a text element
     await page.getByTestId('tool-text').click();
     const canvas = page.getByTestId('slide-canvas');
@@ -61,8 +65,8 @@ test.describe('Editor', () => {
     // Delete it
     await page.getByTestId('tool-delete').click();
 
-    // Should be removed (count back to initial)
-    await expect(page.locator('[data-element-type="text"]')).toHaveCount(1);
+    // Should be back to initial count
+    await expect(page.locator('[data-element-type="text"]')).toHaveCount(initialCount);
   });
 
   test('should zoom in and out', async ({ page }) => {
