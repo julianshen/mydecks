@@ -1,7 +1,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import type { SlideElement } from '@/types';
+
+const ChartElement = dynamic(() => import('./ChartElement'), { ssr: false });
 
 interface Props {
   element: SlideElement;
@@ -118,6 +121,19 @@ export default function SlideElementView({ element, zoom, isSelected, onMouseDow
             height: (style.borderWidth || 2) * zoom,
             backgroundColor: style.borderColor || '#000000',
           }} />
+        </div>
+      );
+    }
+
+    if (element.type === 'chart') {
+      return (
+        <div style={{ width: '100%', height: '100%', backgroundColor: style.backgroundColor || '#ffffff' }}>
+          <ChartElement
+            chartType={content.chartType || 'bar'}
+            chartData={content.chartData || { labels: [], datasets: [] }}
+            width={element.width * zoom}
+            height={element.height * zoom}
+          />
         </div>
       );
     }

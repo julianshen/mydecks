@@ -2,8 +2,11 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import type { Deck, Slide } from '@/types';
 import { ChevronLeft, ChevronRight, X, Maximize2 } from 'lucide-react';
+
+const ChartComponent = dynamic(() => import('@/components/editor/ChartElement'), { ssr: false });
 
 export default function PresentPage() {
   const params = useParams();
@@ -175,6 +178,19 @@ export default function PresentPage() {
                       backgroundColor: style.borderColor || '#000000',
                     }} />
                   </div>
+                </div>
+              );
+            }
+
+            if (el.type === 'chart') {
+              return (
+                <div key={el.id} style={baseStyle}>
+                  <ChartComponent
+                    chartType={elContent.chartType || 'bar'}
+                    chartData={elContent.chartData || { labels: [], datasets: [] }}
+                    width={el.width * scale}
+                    height={el.height * scale}
+                  />
                 </div>
               );
             }

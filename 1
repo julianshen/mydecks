@@ -7678,3 +7678,857 @@ This will cause a hydration error.
  
 [browser] <button> cannot contain a nested <button>.
 See this log for the ancestor stack trace. 
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+[browser] Base UI: A component is changing the default value state of an uncontrolled Tabs after being initialized. To suppress this warning opt to use a controlled Tabs. 
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+[browser] Base UI: A component is changing the default value state of an uncontrolled Tabs after being initialized. To suppress this warning opt to use a controlled Tabs. 
+⨯ SqliteError: NOT NULL constraint failed: slides.deck_id
+    at POST (src/app/api/slides/route.ts:15:6)
+  13 |
+  14 |   db.prepare('INSERT INTO slides (id, deck_id, sort_order, layout, background_color) VALUE...
+> 15 |     .run(id, deckId, sortOrder, layout, bgColor);
+     |      ^
+  16 |
+  17 |   // Add layout elements based on layout type
+  18 |   if (layout === 'title') { {
+  code: 'SQLITE_CONSTRAINT_NOTNULL'
+}
+⨯ SqliteError: NOT NULL constraint failed: slides.deck_id
+    at POST (src/app/api/slides/route.ts:15:6)
+  13 |
+  14 |   db.prepare('INSERT INTO slides (id, deck_id, sort_order, layout, background_color) VALUE...
+> 15 |     .run(id, deckId, sortOrder, layout, bgColor);
+     |      ^
+  16 |
+  17 |   // Add layout elements based on layout type
+  18 |   if (layout === 'title') { {
+  code: 'SQLITE_CONSTRAINT_NOTNULL'
+}
+⨯ SqliteError: NOT NULL constraint failed: slides.deck_id
+    at POST (src/app/api/slides/route.ts:15:6)
+  13 |
+  14 |   db.prepare('INSERT INTO slides (id, deck_id, sort_order, layout, background_color) VALUE...
+> 15 |     .run(id, deckId, sortOrder, layout, bgColor);
+     |      ^
+  16 |
+  17 |   // Add layout elements based on layout type
+  18 |   if (layout === 'title') { {
+  code: 'SQLITE_CONSTRAINT_NOTNULL'
+}
+⨯ SqliteError: NOT NULL constraint failed: slides.deck_id
+    at POST (src/app/api/slides/route.ts:15:6)
+  13 |
+  14 |   db.prepare('INSERT INTO slides (id, deck_id, sort_order, layout, background_color) VALUE...
+> 15 |     .run(id, deckId, sortOrder, layout, bgColor);
+     |      ^
+  16 |
+  17 |   // Add layout elements based on layout type
+  18 |   if (layout === 'title') { {
+  code: 'SQLITE_CONSTRAINT_NOTNULL'
+}
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+"transparent" is not a valid scheme color or hex RGB! "000000" used instead. Only provide 6-digit RGB or 'pptx.SchemeColor' values!
+"transparent" is not a valid scheme color or hex RGB! "000000" used instead. Only provide 6-digit RGB or 'pptx.SchemeColor' values!
+"transparent" is not a valid scheme color or hex RGB! "000000" used instead. Only provide 6-digit RGB or 'pptx.SchemeColor' values!
+"transparent" is not a valid scheme color or hex RGB! "000000" used instead. Only provide 6-digit RGB or 'pptx.SchemeColor' values!
+"transparent" is not a valid scheme color or hex RGB! "000000" used instead. Only provide 6-digit RGB or 'pptx.SchemeColor' values!
+"transparent" is not a valid scheme color or hex RGB! "000000" used instead. Only provide 6-digit RGB or 'pptx.SchemeColor' values!
+"transparent" is not a valid scheme color or hex RGB! "000000" used instead. Only provide 6-digit RGB or 'pptx.SchemeColor' values!
+"transparent" is not a valid scheme color or hex RGB! "000000" used instead. Only provide 6-digit RGB or 'pptx.SchemeColor' values!
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
+[browser] In HTML, <button> cannot be a descendant of <button>.
+This will cause a hydration error.
+
+  ...
+    <TooltipProvider>
+      <TooltipProvider data-slot="tooltip-pr..." delay={0}>
+        <FloatingDelayGroup delay={{open:0, ...}} timeoutMs={400}>
+          <div className="h-screen f..." data-testid="editor-page">
+            <Toolbar editorState={{...}} onChangeMode={function onChangeMode} onToggleGrid={function onToggleGrid} ...>
+              <div className="h-14 bg-wh..." data-testid="editor-too...">
+                <Button>
+                <Separator>
+                <Tooltip>
+                  <TooltipRoot data-slot="tooltip">
+                    <TooltipTrigger>
+                      <TooltipTrigger data-slot="tooltip-tr...">
+>                       <button
+>                         type="button"
+>                         onPointerDown={function}
+>                         onPointerEnter={function}
+>                         onMouseMove={function}
+>                         onMouseLeave={function}
+>                         onFocus={function}
+>                         onBlur={function}
+>                         onMouseOver={function}
+>                         onClick={function}
+>                         id="base-ui-_R_d4dinebn5rlb_"
+>                         data-trigger-disabled={undefined}
+>                         data-base-ui-tooltip-trigger=""
+>                         data-slot="tooltip-trigger"
+>                         ref={function}
+>                       >
+                          <Button variant="secondary" size="sm" onClick={function onClick} data-testid="tool-select">
+                            <Button data-slot="button" className={"group/bu..."} onClick={function onClick} ...>
+>                             <button
+>                               type="button"
+>                               onClick={function}
+>                               onMouseDown={function}
+>                               onKeyDown={function}
+>                               onKeyUp={function}
+>                               onPointerDown={function}
+>                               tabIndex={0}
+>                               disabled={false}
+>                               data-slot="button"
+>                               data-testid="tool-select"
+>                               ref={function}
+>                               className={"group/button inline-flex shrink-0 items-center justify-center border bord..."}
+>                             >
+                    ...
+                ...
+                ...
+            ...
+ 
+[browser] <button> cannot contain a nested <button>.
+See this log for the ancestor stack trace. 
+[browser] Uncaught Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+    at <unknown> (https://react.dev/link/hydration-mismatch)
+    at button (<anonymous>)
+    at Button (src/components/ui/button.tsx:50:5)
+    at <unknown> (src/components/editor/Toolbar.tsx:56:13)
+    at Array.map (<anonymous>)
+    at Toolbar (src/components/editor/Toolbar.tsx:53:14)
+    at EditorPage (src/app/editor/[[...id]]/page.tsx:280:9)
+  48 | }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+  49 |   return (
+> 50 |     <ButtonPrimitive
+     |     ^
+  51 |       data-slot="button"
+  52 |       className={cn(buttonVariants({ variant, size, className }))}
+  53 |       {...props}
