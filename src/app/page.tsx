@@ -66,6 +66,10 @@ export default function HomePage() {
     router.push(`/editor/${deck.id}`);
   }
 
+  // Shared/Starred/Trash aren't backed by data yet, so those sections show an
+  // empty state rather than misleadingly listing every active deck.
+  const visibleDecks = filter === 'all' || filter === 'recent' ? decks : [];
+
   async function deleteDeck(id: string) {
     if (!confirm('Delete this deck?')) return;
     await fetch(`/api/decks/${id}`, { method: 'DELETE' });
@@ -121,17 +125,19 @@ export default function HomePage() {
           </div>
 
           <div className="section-head">
-            <h2>Your decks · {String(decks.length).padStart(2, '0')}</h2>
+            <h2>Your decks · {String(visibleDecks.length).padStart(2, '0')}</h2>
           </div>
 
-          {decks.length === 0 ? (
+          {visibleDecks.length === 0 ? (
             <div className="home-empty" data-testid="empty-state">
               <LayoutGrid size={40} style={{ opacity: 0.4, margin: '0 auto 12px' }} />
-              <p>No decks yet. Create your first presentation.</p>
+              <p>{filter === 'all' || filter === 'recent'
+                ? 'No decks yet. Create your first presentation.'
+                : 'Nothing here yet.'}</p>
             </div>
           ) : (
             <div className="deck-grid" data-testid="decks-grid">
-              {decks.map((deck, i) => (
+              {visibleDecks.map((deck, i) => (
                 <div key={deck.id} className="deck-card" data-testid={`deck-card-${deck.id}`} onClick={() => router.push(`/editor/${deck.id}`)}>
                   <div className="cover"><DeckCover deck={deck} /></div>
                   <div className="info">
@@ -140,7 +146,7 @@ export default function HomePage() {
                       {i === 0 && <span className="badge" style={{ background: 'var(--accent-wash)', color: 'var(--accent)' }}>LATEST</span>}
                     </div>
                     <div className="sub">
-                      <span>{new Date(deck.updated_at).toLocaleDateString()}</span>
+                      <span suppressHydrationWarning>{new Date(deck.updated_at).toLocaleDateString()}</span>
                       <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
                         <button className="sc-iconbtn" style={{ width: 22, height: 22 }} title="Edit" data-testid={`edit-deck-${deck.id}`} onClick={e => { e.stopPropagation(); router.push(`/editor/${deck.id}`); }}><Pencil size={12} /></button>
                         <button className="sc-iconbtn" style={{ width: 22, height: 22 }} title="Present" data-testid={`present-deck-${deck.id}`} onClick={e => { e.stopPropagation(); router.push(`/present/${deck.id}`); }}><Play size={12} /></button>

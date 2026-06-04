@@ -35,7 +35,9 @@ export default function SlideView({ slide, testid, className }: Props) {
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => setScale(el.clientWidth / SLIDE_WIDTH));
+    const ro = new ResizeObserver(entries => {
+      if (entries[0]) setScale(entries[0].contentRect.width / SLIDE_WIDTH);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -124,6 +126,7 @@ export default function SlideView({ slide, testid, className }: Props) {
               lineHeight: style.lineHeight || 1.4,
               padding: (style.padding || 8) * scale,
               width: '100%', height: '100%', wordWrap: 'break-word',
+              whiteSpace: 'pre-wrap',
             }}>
               {content.text || ''}
             </div>
