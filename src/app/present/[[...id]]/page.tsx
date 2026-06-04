@@ -16,7 +16,6 @@ export default function PresentPage() {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     if (!deckId) return;
@@ -44,10 +43,8 @@ export default function PresentPage() {
       if (e.key === 'f') {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen();
-          setIsFullscreen(true);
         } else {
           document.exitFullscreen();
-          setIsFullscreen(false);
         }
       }
     };
@@ -73,10 +70,8 @@ export default function PresentPage() {
           <button onClick={() => {
             if (!document.fullscreenElement) {
               document.documentElement.requestFullscreen();
-              setIsFullscreen(true);
             } else {
               document.exitFullscreen();
-              setIsFullscreen(false);
             }
           }} className="hover:text-zinc-300" data-testid="present-fullscreen">
             <Maximize2 className="h-4 w-4" />
@@ -125,7 +120,7 @@ export default function PresentPage() {
               fontWeight: style.fontWeight || 'normal',
               color: style.color || '#000000',
               backgroundColor: style.backgroundColor || 'transparent',
-              textAlign: (style.textAlign || 'left') as any,
+              textAlign: (style.textAlign || 'left') as React.CSSProperties['textAlign'],
               lineHeight: style.lineHeight || 1.4,
               padding: (style.padding || 8) * scale,
               width: '100%',

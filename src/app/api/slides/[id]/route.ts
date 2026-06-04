@@ -14,6 +14,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
-  db.prepare('DELETE FROM slides WHERE id = ?').run(id);
+  const result = db.prepare('DELETE FROM slides WHERE id = ?').run(id);
+  if (result.changes === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ success: true });
 }

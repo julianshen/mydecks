@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+/playwright-report
+/test-results
+
+# local database (runtime data)
+/data
 
 # next.js
 /.next/

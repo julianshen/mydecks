@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type Database from 'better-sqlite3';
 import { getDb } from '@/lib/db';
 import { randomUUID } from 'crypto';
 
@@ -31,13 +32,13 @@ export async function POST(req: NextRequest) {
     addElement(db, id, 'text', 'Click to add description', 500, 140, 400, 340, { fontSize: 18, color: '#333333' });
   }
 
-  const slide = db.prepare('SELECT * FROM slides WHERE id = ?').get(id);
-  (slide as any).elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(id);
+  const slide = db.prepare('SELECT * FROM slides WHERE id = ?').get(id) as Record<string, unknown>;
+  slide.elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(id);
   return NextResponse.json(slide, { status: 201 });
 }
 
 function addElement(
-  db: any,
+  db: Database.Database,
   slideId: string,
   type: string,
   text: string,
@@ -45,7 +46,7 @@ function addElement(
   y: number,
   w: number,
   h: number,
-  style: Record<string, any>,
+  style: Record<string, unknown>,
   content?: string
 ) {
   const id = randomUUID();

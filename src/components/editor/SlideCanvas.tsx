@@ -13,7 +13,7 @@ interface Props {
   onDeleteElement: (id: string) => void;
 }
 
-export default function SlideCanvas({ slide, editorState, onUpdateElement, onSelectElement, onDeleteElement }: Props) {
+export default function SlideCanvas({ slide, editorState, onUpdateElement, onSelectElement }: Props) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
   const [resizing, setResizing] = useState<{ id: string; startX: number; startY: number; startW: number; startH: number; corner: string } | null>(null);
