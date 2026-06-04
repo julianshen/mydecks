@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Type, Heading, Image as ImageIcon, Square, Minus, BarChart3, Table as TableIcon, Plus, Trash2 } from 'lucide-react';
 import type { SlideElement, Slide, EditorState } from '@/types';
 import { ACCENTS } from './useEditorTheme';
+import { normalizeTableData } from './TableElement';
 
 interface Props {
   element: SlideElement | null;
@@ -228,8 +229,8 @@ export default function PropertiesPanel({ element, slide, onUpdateElement, onUpd
               )}
 
               {element.type === 'table' && (() => {
-                const data: string[][] = elContent.tableData?.length ? elContent.tableData : [['']];
-                const cols = Math.max(...data.map(r => r.length));
+                const data = normalizeTableData(elContent.tableData);
+                const cols = data[0].length;
                 const setData = (next: string[][]) => updateContent('tableData', next);
                 const setCell = (r: number, c: number, value: string) =>
                   setData(data.map((row, ri) => ri === r ? row.map((cell, ci) => ci === c ? value : cell) : row));

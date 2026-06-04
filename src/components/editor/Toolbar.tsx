@@ -39,6 +39,8 @@ const TOOLS = [
   { mode: 'image' as const, icon: ImageIcon, label: 'Image (I)' },
   { mode: 'shape' as const, icon: Square, label: 'Shape (S)' },
   { mode: 'line' as const, icon: Minus, label: 'Line (L)' },
+  { mode: 'chart' as const, icon: BarChart3, label: 'Chart' },
+  { mode: 'table' as const, icon: TableIcon, label: 'Table' },
 ];
 
 const LAYOUTS = [
@@ -76,12 +78,6 @@ export default function Toolbar({
             <t.icon size={15} />
           </button>
         ))}
-        <button className={`sc-iconbtn ${editorState.mode === 'chart' ? 'active' : ''}`} title="Chart" onClick={() => onChangeMode('chart')} data-testid="tool-chart">
-          <BarChart3 size={15} />
-        </button>
-        <button className={`sc-iconbtn ${editorState.mode === 'table' ? 'active' : ''}`} title="Table" onClick={() => onChangeMode('table')} data-testid="tool-table">
-          <TableIcon size={15} />
-        </button>
       </div>
 
       <div className="sc-group">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import PptxGenJS from 'pptxgenjs';
+import { normalizeTableData } from '@/components/editor/TableElement';
 
 interface DeckRow {
   title: string;
@@ -95,7 +96,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           });
         }
       } else if (el.type === 'table') {
-        const tableData: string[][] = content.tableData?.length ? content.tableData : [['']];
+        const tableData = normalizeTableData(content.tableData);
         const borderColor = (style.borderColor || '#D1D5DB').replace('#', '');
         const textColor = (style.color || '#1A1A1A').replace('#', '');
         const rows = tableData.map((row, r) =>
@@ -113,7 +114,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         );
         slidePptx.addTable(rows as Parameters<typeof slidePptx.addTable>[0], {
           x, y, w, h,
-          border: { type: 'solid', pt: style.borderWidth || 1, color: borderColor },
+          border: style.borderWidth === 0 ? undefined : { type: 'solid', pt: style.borderWidth ?? 1, color: borderColor },
         });
       }
     }
