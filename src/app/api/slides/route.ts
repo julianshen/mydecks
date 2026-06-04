@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
     addElement(db, id, 'text', 'Click to add description', 500, 140, 400, 340, { fontSize: 18, color: '#333333' });
   }
 
-  const slide = db.prepare('SELECT * FROM slides WHERE id = ?').get(id) as Record<string, unknown>;
+  const slide = db.prepare('SELECT * FROM slides WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  if (!slide) {
+    return NextResponse.json({ error: 'Failed to retrieve created slide' }, { status: 500 });
+  }
   slide.elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(id);
   return NextResponse.json(slide, { status: 201 });
 }

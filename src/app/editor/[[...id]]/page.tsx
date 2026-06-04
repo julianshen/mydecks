@@ -301,7 +301,6 @@ export default function EditorPage() {
                 editorState={editorState}
                 onUpdateElement={updateElement}
                 onSelectElement={id => setEditorState(prev => ({ ...prev, selectedElementId: id }))}
-                onDeleteElement={handleDeleteElement}
               />
             </div>
           ) : (

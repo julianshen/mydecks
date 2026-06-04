@@ -10,7 +10,6 @@ interface Props {
   editorState: EditorState;
   onUpdateElement: (id: string, updates: Partial<SlideElement>) => void;
   onSelectElement: (id: string | null) => void;
-  onDeleteElement: (id: string) => void;
 }
 
 export default function SlideCanvas({ slide, editorState, onUpdateElement, onSelectElement }: Props) {
