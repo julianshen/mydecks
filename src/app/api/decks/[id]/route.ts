@@ -7,12 +7,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   const deck = db.prepare('SELECT * FROM decks WHERE id = ?').get(id);
   if (!deck) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const slides = db.prepare('SELECT * FROM slides WHERE deck_id = ? ORDER BY sort_order').all(id);
+  const slides = db.prepare('SELECT * FROM slides WHERE deck_id = ? ORDER BY sort_order').all(id) as Array<Record<string, unknown> & { id: string }>;
   for (const slide of slides) {
-    (slide as any).elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all((slide as any).id);
+    slide.elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(slide.id);
   }
 
-  return NextResponse.json({ ...deck as any, slides });
+  return NextResponse.json({ ...(deck as Record<string, unknown>), slides });
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
-  db.prepare('DELETE FROM decks WHERE id = ?').run(id);
+  const result = db.prepare('DELETE FROM decks WHERE id = ?').run(id);
+  if (result.changes === 0) return NextResponse.json({ error: 'Not found' }, { status: 404 });
   return NextResponse.json({ success: true });
 }

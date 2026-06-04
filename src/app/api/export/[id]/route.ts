@@ -2,13 +2,35 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import PptxGenJS from 'pptxgenjs';
 
+interface DeckRow {
+  title: string;
+  [key: string]: unknown;
+}
+
+interface SlideRow {
+  id: string;
+  background_color?: string;
+  [key: string]: unknown;
+}
+
+interface ElementRow {
+  type: string;
+  content: string;
+  style: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  [key: string]: unknown;
+}
+
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const db = getDb();
-  const deck = db.prepare('SELECT * FROM decks WHERE id = ?').get(id) as any;
+  const deck = db.prepare('SELECT * FROM decks WHERE id = ?').get(id) as DeckRow | undefined;
   if (!deck) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-  const slides = db.prepare('SELECT * FROM slides WHERE deck_id = ? ORDER BY sort_order').all(id) as any[];
+  const slides = db.prepare('SELECT * FROM slides WHERE deck_id = ? ORDER BY sort_order').all(id) as SlideRow[];
 
   const pptx = new PptxGenJS();
   pptx.title = deck.title;
@@ -19,7 +41,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     const slidePptx = pptx.addSlide();
     slidePptx.background = { color: slide.background_color || '#FFFFFF' };
 
-    const elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(slide.id) as any[];
+    const elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(slide.id) as ElementRow[];
 
     for (const el of elements) {
       const content = JSON.parse(el.content || '{}');
@@ -47,12 +69,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         }
       } else if (el.type === 'shape') {
         const shapeType = content.shapeType || 'rect';
-        const shapeMap: Record<string, any> = {
+        const shapeMap: Record<string, string> = {
           rect: 'rect',
           circle: 'ellipse',
           triangle: 'triangle',
         };
-        slidePptx.addShape(shapeMap[shapeType] || 'rect', {
+        slidePptx.addShape((shapeMap[shapeType] || 'rect') as Parameters<typeof slidePptx.addShape>[0], {
           x, y, w, h,
           fill: { color: (style.backgroundColor || '#3B82F6').replace('#', '') },
           line: { color: (style.borderColor || 'transparent').replace('#', ''), width: style.borderWidth || 0 },
@@ -63,7 +85,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 
   const buffer = await pptx.write({ outputType: 'nodebuffer' }) as Buffer;
 
-  return new NextResponse(buffer as any, {
+  return new NextResponse(buffer as unknown as BodyInit, {
     headers: {
       'Content-Type': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
       'Content-Disposition': `attachment; filename="${deck.title.replace(/[^a-zA-Z0-9]/g, '_')}.pptx"`,

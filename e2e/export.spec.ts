@@ -9,7 +9,7 @@ test.describe('Export', () => {
     await expect(page.getByTestId('editor-page')).toBeVisible();
   });
 
-  test('should export deck as PPTX', async ({ page, context }) => {
+  test('should export deck as PPTX', async ({ page }) => {
     // Wait for download
     const [download] = await Promise.all([
       page.waitForEvent('download'),

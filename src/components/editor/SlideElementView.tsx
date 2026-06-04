@@ -51,7 +51,7 @@ export default function SlideElementView({ element, zoom, isSelected, onMouseDow
     fontWeight: style.fontWeight || 'normal',
     color: style.color || '#000000',
     backgroundColor: style.backgroundColor || 'transparent',
-    textAlign: (style.textAlign || 'left') as any,
+    textAlign: (style.textAlign || 'left') as React.CSSProperties['textAlign'],
     lineHeight: style.lineHeight || 1.4,
     padding: (style.padding || 8) * zoom,
     width: '100%',

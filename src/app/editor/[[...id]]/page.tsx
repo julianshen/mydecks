@@ -9,14 +9,13 @@ import SlidePanel from '@/components/editor/SlidePanel';
 import PropertiesPanel from '@/components/editor/PropertiesPanel';
 import type { Deck, Slide, SlideElement, EditorState } from '@/types';
 import { SLIDE_WIDTH, SLIDE_HEIGHT } from '@/types';
-import { randomUUID } from '@/lib/uuid';
 
 export default function EditorPage() {
   const params = useParams();
   const router = useRouter();
   const deckId = params.id?.[0];
 
-  const [deck, setDeck] = useState<Deck | null>(null);
+  const [, setDeck] = useState<Deck | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
   const [editorState, setEditorState] = useState<EditorState>({
     selectedSlideId: null,
@@ -26,7 +25,7 @@ export default function EditorPage() {
     showGrid: true,
     snapToGrid: false,
   });
-  const [history, setHistory] = useState<string[]>([]);
+  const [history] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const savingRef = useRef(false);
 
@@ -45,67 +44,13 @@ export default function EditorPage() {
       });
   }, [deckId]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target as HTMLElement).isContentEditable) return;
-
-      if (e.key === 'v' || e.key === 'V') setEditorState(prev => ({ ...prev, mode: 'select' }));
-      if (e.key === 't' || e.key === 'T') setEditorState(prev => ({ ...prev, mode: 'text' }));
-      if (e.key === 'h' || e.key === 'H') setEditorState(prev => ({ ...prev, mode: 'heading' }));
-      if (e.key === 'i' || e.key === 'I') setEditorState(prev => ({ ...prev, mode: 'image' }));
-      if (e.key === 's' || e.key === 'S') setEditorState(prev => ({ ...prev, mode: 'shape' }));
-      if (e.key === 'l' || e.key === 'L') setEditorState(prev => ({ ...prev, mode: 'line' }));
-      if (e.key === 'Delete' || e.key === 'Backspace') handleDeleteElement();
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); handleUndo(); }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'y') { e.preventDefault(); handleRedo(); }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'd') { e.preventDefault(); handleDuplicate(); }
-      if (e.key === 'Escape') setEditorState(prev => ({ ...prev, selectedElementId: null }));
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [editorState.selectedElementId, slides]);
-
-  // Listen for text changes from SlideElementView
-  useEffect(() => {
-    const handler = (e: any) => {
-      const { id, text } = e.detail;
-      updateElement(id, { content: { ...getElementContent(id), text } });
-    };
-    window.addEventListener('element-text-change' as any, handler);
-    return () => window.removeEventListener('element-text-change' as any, handler);
-  }, [slides]);
-
-  const getElementContent = (id: string) => {
+  const getElementContent = useCallback((id: string) => {
     const slide = slides.find(s => s.id === editorState.selectedSlideId);
     const el = slide?.elements?.find(e => e.id === id);
     return el ? (typeof el.content === 'string' ? JSON.parse(el.content) : el.content) : {};
-  };
+  }, [slides, editorState.selectedSlideId]);
 
-  const saveHistory = useCallback((newSlides: Slide[]) => {
-    const json = JSON.stringify(newSlides);
-    setHistory(prev => {
-      const sliced = prev.slice(0, historyIndex + 1);
-      return [...sliced, json];
-    });
-    setHistoryIndex(prev => prev + 1);
-  }, [historyIndex]);
-
-  const handleUndo = () => {
-    if (historyIndex <= 0) return;
-    const newIndex = historyIndex - 1;
-    setHistoryIndex(newIndex);
-    setSlides(JSON.parse(history[newIndex]));
-  };
-
-  const handleRedo = () => {
-    if (historyIndex >= history.length - 1) return;
-    const newIndex = historyIndex + 1;
-    setHistoryIndex(newIndex);
-    setSlides(JSON.parse(history[newIndex]));
-  };
-
-  const updateElement = async (elementId: string, updates: Partial<SlideElement>) => {
+  const updateElement = useCallback(async (elementId: string, updates: Partial<SlideElement>) => {
     const newSlides = slides.map(s => {
       if (s.id !== editorState.selectedSlideId) return s;
       return {
@@ -132,7 +77,86 @@ export default function EditorPage() {
       });
       savingRef.current = false;
     }, 300);
-  };
+  }, [slides, editorState.selectedSlideId]);
+
+  const handleUndo = useCallback(() => {
+    if (historyIndex <= 0) return;
+    const newIndex = historyIndex - 1;
+    setHistoryIndex(newIndex);
+    setSlides(JSON.parse(history[newIndex]));
+  }, [history, historyIndex]);
+
+  const handleRedo = useCallback(() => {
+    if (historyIndex >= history.length - 1) return;
+    const newIndex = historyIndex + 1;
+    setHistoryIndex(newIndex);
+    setSlides(JSON.parse(history[newIndex]));
+  }, [history, historyIndex]);
+
+  const handleDeleteElement = useCallback(() => {
+    if (!editorState.selectedElementId) return;
+    fetch(`/api/elements/${editorState.selectedElementId}`, { method: 'DELETE' });
+    setSlides(slides.map(s => s.id === editorState.selectedSlideId ? { ...s, elements: s.elements?.filter(e => e.id !== editorState.selectedElementId) } : s));
+    setEditorState(prev => ({ ...prev, selectedElementId: null }));
+  }, [slides, editorState.selectedSlideId, editorState.selectedElementId]);
+
+  const handleDuplicate = useCallback(() => {
+    const slide = slides.find(s => s.id === editorState.selectedSlideId);
+    const el = slide?.elements?.find(e => e.id === editorState.selectedElementId);
+    if (!el) return;
+    fetch('/api/elements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        slide_id: el.slide_id,
+        type: el.type,
+        content: typeof el.content === 'string' ? JSON.parse(el.content) : el.content,
+        x: el.x + 20,
+        y: el.y + 20,
+        width: el.width,
+        height: el.height,
+        rotation: el.rotation,
+        z_index: (slide?.elements?.length || 0) + 1,
+        style: typeof el.style === 'string' ? JSON.parse(el.style) : el.style,
+      }),
+    })
+      .then(r => r.json())
+      .then(newEl => {
+        setSlides(slides.map(s => s.id === editorState.selectedSlideId ? { ...s, elements: [...(s.elements || []), newEl] } : s));
+        setEditorState(prev => ({ ...prev, selectedElementId: newEl.id }));
+      });
+  }, [slides, editorState.selectedSlideId, editorState.selectedElementId]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || (e.target as HTMLElement).isContentEditable) return;
+
+      if (e.key === 'v' || e.key === 'V') setEditorState(prev => ({ ...prev, mode: 'select' }));
+      if (e.key === 't' || e.key === 'T') setEditorState(prev => ({ ...prev, mode: 'text' }));
+      if (e.key === 'h' || e.key === 'H') setEditorState(prev => ({ ...prev, mode: 'heading' }));
+      if (e.key === 'i' || e.key === 'I') setEditorState(prev => ({ ...prev, mode: 'image' }));
+      if (e.key === 's' || e.key === 'S') setEditorState(prev => ({ ...prev, mode: 'shape' }));
+      if (e.key === 'l' || e.key === 'L') setEditorState(prev => ({ ...prev, mode: 'line' }));
+      if (e.key === 'Delete' || e.key === 'Backspace') handleDeleteElement();
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.preventDefault(); handleUndo(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') { e.preventDefault(); handleRedo(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd') { e.preventDefault(); handleDuplicate(); }
+      if (e.key === 'Escape') setEditorState(prev => ({ ...prev, selectedElementId: null }));
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleDeleteElement, handleUndo, handleRedo, handleDuplicate]);
+
+  // Listen for text changes from SlideElementView
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const { id, text } = (e as CustomEvent<{ id: string; text: string }>).detail;
+      updateElement(id, { content: { ...getElementContent(id), text } });
+    };
+    window.addEventListener('element-text-change', handler);
+    return () => window.removeEventListener('element-text-change', handler);
+  }, [updateElement, getElementContent]);
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (editorState.mode === 'select') return;
@@ -167,40 +191,6 @@ export default function EditorPage() {
       .then(el => {
         setSlides(slides.map(s => s.id === editorState.selectedSlideId ? { ...s, elements: [...(s.elements || []), el] } : s));
         setEditorState(prev => ({ ...prev, mode: 'select', selectedElementId: el.id }));
-      });
-  };
-
-  const handleDeleteElement = () => {
-    if (!editorState.selectedElementId) return;
-    fetch(`/api/elements/${editorState.selectedElementId}`, { method: 'DELETE' });
-    setSlides(slides.map(s => s.id === editorState.selectedSlideId ? { ...s, elements: s.elements?.filter(e => e.id !== editorState.selectedElementId) } : s));
-    setEditorState(prev => ({ ...prev, selectedElementId: null }));
-  };
-
-  const handleDuplicate = () => {
-    const slide = slides.find(s => s.id === editorState.selectedSlideId);
-    const el = slide?.elements?.find(e => e.id === editorState.selectedElementId);
-    if (!el) return;
-    fetch('/api/elements', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        slide_id: el.slide_id,
-        type: el.type,
-        content: typeof el.content === 'string' ? JSON.parse(el.content) : el.content,
-        x: el.x + 20,
-        y: el.y + 20,
-        width: el.width,
-        height: el.height,
-        rotation: el.rotation,
-        z_index: (slide?.elements?.length || 0) + 1,
-        style: typeof el.style === 'string' ? JSON.parse(el.style) : el.style,
-      }),
-    })
-      .then(r => r.json())
-      .then(newEl => {
-        setSlides(slides.map(s => s.id === editorState.selectedSlideId ? { ...s, elements: [...(s.elements || []), newEl] } : s));
-        setEditorState(prev => ({ ...prev, selectedElementId: newEl.id }));
       });
   };
 
@@ -311,7 +301,6 @@ export default function EditorPage() {
                 editorState={editorState}
                 onUpdateElement={updateElement}
                 onSelectElement={id => setEditorState(prev => ({ ...prev, selectedElementId: id }))}
-                onDeleteElement={handleDeleteElement}
               />
             </div>
           ) : (

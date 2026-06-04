@@ -30,12 +30,12 @@ export default function PropertiesPanel({ element, slide, onUpdateElement, onUpd
   const elStyle = element ? (typeof element.style === 'string' ? JSON.parse(element.style) : element.style) : {};
   const elContent = element ? (typeof element.content === 'string' ? JSON.parse(element.content) : element.content) : {};
 
-  const updateStyle = (key: string, value: any) => {
+  const updateStyle = (key: string, value: unknown) => {
     if (!element) return;
     onUpdateElement(element.id, { style: { ...elStyle, [key]: value } });
   };
 
-  const updateContent = (key: string, value: any) => {
+  const updateContent = (key: string, value: unknown) => {
     if (!element) return;
     onUpdateElement(element.id, { content: { ...elContent, [key]: value } });
   };
