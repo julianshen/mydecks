@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Type, Heading, Image as ImageIcon, Square, Minus, BarChart3 } from 'lucide-react';
+import { Type, Heading, Image as ImageIcon, Square, Minus, BarChart3, Table as TableIcon, Plus, Trash2 } from 'lucide-react';
 import type { SlideElement, Slide, EditorState } from '@/types';
 import { ACCENTS } from './useEditorTheme';
 
@@ -21,6 +21,7 @@ const COMPONENTS: { label: string; icon: typeof Type; mode: EditorState['mode'] 
   { label: 'Image', icon: ImageIcon, mode: 'image' },
   { label: 'Shape', icon: Square, mode: 'shape' },
   { label: 'Chart', icon: BarChart3, mode: 'chart' },
+  { label: 'Table', icon: TableIcon, mode: 'table' },
   { label: 'Line', icon: Minus, mode: 'line' },
 ];
 
@@ -225,6 +226,53 @@ export default function PropertiesPanel({ element, slide, onUpdateElement, onUpd
                   <div className="sc-field-row"><label>width</label><NumField label="px" value={elStyle.borderWidth || 2} onChange={v => updateStyle('borderWidth', v)} testid="prop-line-width" /></div>
                 </div>
               )}
+
+              {element.type === 'table' && (() => {
+                const data: string[][] = elContent.tableData?.length ? elContent.tableData : [['']];
+                const cols = Math.max(...data.map(r => r.length));
+                const setData = (next: string[][]) => updateContent('tableData', next);
+                const setCell = (r: number, c: number, value: string) =>
+                  setData(data.map((row, ri) => ri === r ? row.map((cell, ci) => ci === c ? value : cell) : row));
+                const addRow = () => setData([...data, Array.from({ length: cols }, () => '')]);
+                const removeRow = () => data.length > 1 && setData(data.slice(0, -1));
+                const addCol = () => setData(data.map(row => [...row, '']));
+                const removeCol = () => cols > 1 && setData(data.map(row => row.slice(0, -1)));
+                return (
+                  <div className="sc-pane-section">
+                    <h4>Table</h4>
+                    <div className="sc-field-row" style={{ gap: 6 }}>
+                      <label>rows</label>
+                      <div className="sc-seg">
+                        <button onClick={removeRow} title="Remove row" data-testid="prop-table-row-remove"><Trash2 size={12} /></button>
+                        <button onClick={addRow} title="Add row" data-testid="prop-table-row-add"><Plus size={12} /></button>
+                      </div>
+                      <label>cols</label>
+                      <div className="sc-seg">
+                        <button onClick={removeCol} title="Remove column" data-testid="prop-table-col-remove"><Trash2 size={12} /></button>
+                        <button onClick={addCol} title="Add column" data-testid="prop-table-col-add"><Plus size={12} /></button>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 4, marginTop: 6 }} data-testid="prop-table-grid">
+                      {data.map((row, r) =>
+                        Array.from({ length: cols }, (_, c) => (
+                          <input
+                            key={`${r}-${c}`}
+                            className="sc-native-select"
+                            style={{ minWidth: 0, fontSize: 11 }}
+                            value={row[c] ?? ''}
+                            placeholder={r === 0 ? `H${c + 1}` : ''}
+                            onChange={e => setCell(r, c, e.target.value)}
+                            data-testid={`prop-table-cell-${r}-${c}`}
+                          />
+                        ))
+                      )}
+                    </div>
+                    <div className="sc-field-row" style={{ marginTop: 8 }}><label>border</label><input type="color" className="sc-color-input" value={elStyle.borderColor || '#d1d5db'} onChange={e => updateStyle('borderColor', e.target.value)} data-testid="prop-table-border" /></div>
+                    <div className="sc-field-row"><label>text</label><input type="color" className="sc-color-input" value={elStyle.color || '#1a1a1a'} onChange={e => updateStyle('color', e.target.value)} data-testid="prop-table-text" /></div>
+                    <div className="sc-field-row"><label>size</label><NumField label="px" value={elStyle.fontSize || 14} onChange={v => updateStyle('fontSize', v)} testid="prop-table-size" /></div>
+                  </div>
+                );
+              })()}
             </>
           )
         )}

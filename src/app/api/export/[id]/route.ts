@@ -94,6 +94,27 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
             showTitle: false,
           });
         }
+      } else if (el.type === 'table') {
+        const tableData: string[][] = content.tableData?.length ? content.tableData : [['']];
+        const borderColor = (style.borderColor || '#D1D5DB').replace('#', '');
+        const textColor = (style.color || '#1A1A1A').replace('#', '');
+        const rows = tableData.map((row, r) =>
+          row.map(cell => ({
+            text: cell || '',
+            options: {
+              bold: r === 0,
+              color: textColor,
+              fontSize: style.fontSize ? style.fontSize * 0.75 : 11,
+              fill: r === 0 ? { color: 'F2F2F2' } : undefined,
+              align: (style.textAlign || 'left') as 'left' | 'center' | 'right',
+              valign: 'middle' as const,
+            },
+          }))
+        );
+        slidePptx.addTable(rows as Parameters<typeof slidePptx.addTable>[0], {
+          x, y, w, h,
+          border: { type: 'solid', pt: style.borderWidth || 1, color: borderColor },
+        });
       }
     }
   }

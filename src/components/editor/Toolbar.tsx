@@ -2,6 +2,7 @@
 
 import {
   MousePointer2, Type, Heading, Image as ImageIcon, Square, Minus, BarChart3,
+  Table as TableIcon,
   Grid3X3, Magnet, Undo2, Redo2, Copy, BringToFront, SendToBack, Trash2,
   AlignLeft, AlignCenter, AlignRight, LayoutGrid,
 } from 'lucide-react';
@@ -75,8 +76,11 @@ export default function Toolbar({
             <t.icon size={15} />
           </button>
         ))}
-        <button className="sc-iconbtn" title="Chart" onClick={() => onChangeMode('chart')} data-testid="tool-chart">
+        <button className={`sc-iconbtn ${editorState.mode === 'chart' ? 'active' : ''}`} title="Chart" onClick={() => onChangeMode('chart')} data-testid="tool-chart">
           <BarChart3 size={15} />
+        </button>
+        <button className={`sc-iconbtn ${editorState.mode === 'table' ? 'active' : ''}`} title="Table" onClick={() => onChangeMode('table')} data-testid="tool-table">
+          <TableIcon size={15} />
         </button>
       </div>
 

@@ -175,8 +175,8 @@ export default function EditorPage() {
       type: editorState.mode,
       x: Math.max(0, Math.min(SLIDE_WIDTH - 100, x - 50)),
       y: Math.max(0, Math.min(SLIDE_HEIGHT - 50, y - 25)),
-      width: editorState.mode === 'line' ? 200 : editorState.mode === 'chart' ? 480 : 300,
-      height: editorState.mode === 'line' ? 4 : editorState.mode === 'heading' ? 60 : editorState.mode === 'chart' ? 300 : 50,
+      width: editorState.mode === 'line' ? 200 : editorState.mode === 'chart' ? 480 : editorState.mode === 'table' ? 420 : 300,
+      height: editorState.mode === 'line' ? 4 : editorState.mode === 'heading' ? 60 : editorState.mode === 'chart' ? 300 : editorState.mode === 'table' ? 160 : 50,
       z_index: (slides.find(s => s.id === editorState.selectedSlideId)?.elements?.length || 0) + 1,
       content: editorState.mode === 'image'
         ? { src: '', alt: '' }
@@ -184,6 +184,8 @@ export default function EditorPage() {
         ? { shapeType: 'rect' }
         : editorState.mode === 'chart'
         ? { chartType: 'bar', chartData: { labels: ['Q1', 'Q2', 'Q3', 'Q4'], datasets: [{ label: 'Revenue', data: [42, 58, 51, 73] }] } }
+        : editorState.mode === 'table'
+        ? { tableData: [['Header 1', 'Header 2', 'Header 3'], ['', '', ''], ['', '', '']] }
         : { text: editorState.mode === 'heading' ? 'Heading' : 'Text' },
       style: editorState.mode === 'heading'
         ? { fontSize: 36, color: '#1a1a1a', fontWeight: 'bold' }
@@ -193,6 +195,8 @@ export default function EditorPage() {
         ? { borderColor: '#000000', borderWidth: 2 }
         : editorState.mode === 'chart'
         ? { backgroundColor: '#ffffff' }
+        : editorState.mode === 'table'
+        ? { fontSize: 14, color: '#1a1a1a', borderColor: '#d1d5db', borderWidth: 1, backgroundColor: '#ffffff' }
         : { fontSize: 18, color: '#333333' },
     };
 

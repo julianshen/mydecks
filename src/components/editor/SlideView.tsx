@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { SLIDE_WIDTH, SLIDE_HEIGHT } from '@/types';
 import type { Slide, ElementStyle, ElementContent } from '@/types';
 
+import TableElement from './TableElement';
+
 const ChartComponent = dynamic(() => import('./ChartElement'), { ssr: false });
 
 function parse<T>(value: unknown): T {
@@ -112,6 +114,13 @@ export default function SlideView({ slide, testid, className }: Props) {
                 width={el.width * scale}
                 height={el.height * scale}
               />
+            </div>
+          );
+        }
+        if (el.type === 'table') {
+          return (
+            <div key={el.id} style={base}>
+              <TableElement content={content} style={style} scale={scale} />
             </div>
           );
         }
