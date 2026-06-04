@@ -175,20 +175,21 @@ export default function SlideElementView({ element, zoom, isSelected, onMouseDow
       {renderContent()}
       {isSelected && !editing && (
         <>
+          <span className="sc-sel-label">{Math.round(element.width)} × {Math.round(element.height)}</span>
           {resizeHandles.map(corner => (
             <div
               key={corner}
               data-testid={`resize-handle-${corner}-${element.id}`}
               style={{
                 position: 'absolute',
-                width: 8 * zoom,
-                height: 8 * zoom,
-                backgroundColor: '#3B82F6',
-                border: `${zoom}px solid white`,
-                borderRadius: '50%',
+                width: 8,
+                height: 8,
+                background: 'white',
+                border: '1.5px solid var(--accent)',
+                borderRadius: 1,
                 cursor: `${corner}-resize`,
-                ...(corner.includes('n') ? { top: -4 * zoom } : { bottom: -4 * zoom }),
-                ...(corner.includes('w') ? { left: -4 * zoom } : { right: -4 * zoom }),
+                ...(corner.includes('n') ? { top: -4 } : { bottom: -4 }),
+                ...(corner.includes('w') ? { left: -4 } : { right: -4 }),
                 zIndex: 100,
               }}
               onMouseDown={(e) => onResizeMouseDown(e, element.id, corner)}
@@ -197,8 +198,8 @@ export default function SlideElementView({ element, zoom, isSelected, onMouseDow
           <div
             style={{
               position: 'absolute',
-              inset: -2 * zoom,
-              border: `${zoom}px solid #3B82F6`,
+              inset: -1.5,
+              border: '1.5px solid var(--accent)',
               pointerEvents: 'none',
             }}
           />
