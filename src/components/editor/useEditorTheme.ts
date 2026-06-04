@@ -17,35 +17,40 @@ export const ACCENTS: { name: string; hue: number; swatch: string }[] = [
 const MODE_KEY = 'mydecks.editor.theme';
 const ACCENT_KEY = 'mydecks.editor.accent';
 
-function readStored<T>(key: string, fallback: T, parse: (v: string) => T): T {
-  if (typeof window === 'undefined') return fallback;
-  try {
-    const v = localStorage.getItem(key);
-    return v == null ? fallback : parse(v);
-  } catch {
-    return fallback;
-  }
-}
-
 export function useEditorTheme() {
-  // Lazy initializers read persisted prefs on the client without a
-  // setState-in-effect (which would cause cascading renders). On a fresh
-  // SSR load this defaults to light/indigo, then the client picks up the
-  // stored value on first render.
-  const [mode, setMode] = useState<EditorThemeMode>(() =>
-    readStored<EditorThemeMode>(MODE_KEY, 'light', v => (v === 'dark' ? 'dark' : 'light')),
-  );
-  const [accentHue, setAccentHue] = useState<number>(() =>
-    readStored<number>(ACCENT_KEY, 265, v => Number(v) || 265),
-  );
+  // Start from the SSR defaults so the server HTML and the first client
+  // render agree (theme drives several bits of markup — select values, the
+  // toggle icon, swatch state — so a lazy localStorage read would cause a
+  // hydration mismatch). Persisted prefs are loaded after mount, and writes
+  // are gated on `mounted` so the load can't be clobbered by a save.
+  const [mode, setMode] = useState<EditorThemeMode>('light');
+  const [accentHue, setAccentHue] = useState<number>(265);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- one-time client hydration of persisted prefs */
+    setMounted(true);
+    try {
+      const m = localStorage.getItem(MODE_KEY);
+      if (m === 'dark' || m === 'light') setMode(m);
+      const a = localStorage.getItem(ACCENT_KEY);
+      const hue = a == null ? NaN : Number(a);
+      if (Number.isFinite(hue)) setAccentHue(hue);
+    } catch {
+      /* ignore (e.g. private mode) */
+    }
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     try { localStorage.setItem(MODE_KEY, mode); } catch {}
-  }, [mode]);
+  }, [mode, mounted]);
 
   useEffect(() => {
+    if (!mounted) return;
     try { localStorage.setItem(ACCENT_KEY, String(accentHue)); } catch {}
-  }, [accentHue]);
+  }, [accentHue, mounted]);
 
   const toggleMode = () => setMode(m => (m === 'light' ? 'dark' : 'light'));
 

@@ -36,7 +36,15 @@ function NumField({ label, value, onChange, testid }: { label: string; value: nu
   return (
     <div className="sc-input-group">
       <span className="ico">{label}</span>
-      <input type="number" value={value} onChange={e => onChange(Number(e.target.value))} data-testid={testid} />
+      <input
+        type="number"
+        value={Number.isFinite(value) ? value : ''}
+        onChange={e => {
+          const n = Number(e.target.value);
+          if (Number.isFinite(n)) onChange(n);
+        }}
+        data-testid={testid}
+      />
     </div>
   );
 }

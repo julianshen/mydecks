@@ -2,7 +2,18 @@
 
 import { Plus, Trash2 } from 'lucide-react';
 import { SLIDE_WIDTH, SLIDE_HEIGHT } from '@/types';
-import type { Slide } from '@/types';
+import type { Slide, ElementStyle, ElementContent } from '@/types';
+
+// Tolerate malformed/null JSON so one bad row can't crash the whole panel.
+function safeParse(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object') return value as Record<string, unknown>;
+  if (typeof value !== 'string') return {};
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+}
 
 interface Props {
   slides: Slide[];
@@ -24,8 +35,8 @@ function MiniSlide({ slide }: { slide: Slide }) {
       }}
     >
       {slide.elements?.map(el => {
-        const style = typeof el.style === 'string' ? JSON.parse(el.style) : el.style;
-        const content = typeof el.content === 'string' ? JSON.parse(el.content) : el.content;
+        const style = safeParse(el.style) as ElementStyle;
+        const content = safeParse(el.content) as ElementContent;
         return (
           <div
             key={el.id}

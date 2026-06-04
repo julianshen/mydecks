@@ -250,6 +250,7 @@
   height: calc(var(--topbar-h) - 1px); padding: 0 12px; font-size: 12.5px;
   color: var(--ink-3); display: flex; align-items: center; gap: 6px;
   border-bottom: 1.5px solid transparent; margin-bottom: -1px; transition: color .12s;
+  text-decoration: none;
 }
 .sc-tab:hover { color: var(--ink); }
 .sc-tab.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 500; }

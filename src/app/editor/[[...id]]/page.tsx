@@ -162,7 +162,11 @@ export default function EditorPage() {
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (editorState.mode === 'select') return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    // Only insert when the click lands on the slide surface — not on the
+    // rulers, status bar, or zoom controls that also live in this wrapper.
+    const frame = (e.target as HTMLElement).closest('[data-role="slide-background"]') as HTMLElement | null;
+    if (!frame) return;
+    const rect = frame.getBoundingClientRect();
     const x = (e.clientX - rect.left) / editorState.zoom;
     const y = (e.clientY - rect.top) / editorState.zoom;
 

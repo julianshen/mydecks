@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { Play, Download, Share2, Sun, Moon } from 'lucide-react';
 import type { EditorThemeMode } from './useEditorTheme';
 
@@ -33,9 +34,9 @@ export default function Topbar({ docName, themeName, mode, onToggleMode, onPrese
       </div>
 
       <nav className="sc-nav">
-        <button className="sc-tab" onClick={() => (window.location.href = '/')}>Files</button>
-        <button className="sc-tab active">Editor</button>
-        <button className="sc-tab" onClick={() => (window.location.href = '/')}>Sorter</button>
+        <Link className="sc-tab" href="/">Files</Link>
+        <span className="sc-tab active">Editor</span>
+        <Link className="sc-tab" href="/">Sorter</Link>
       </nav>
 
       <div className="sc-topbar-title">
