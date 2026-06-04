@@ -41,6 +41,17 @@ function DeckCover({ deck }: { deck: Deck }) {
   );
 }
 
+// Lets a non-semantic element behave like a button for keyboard users:
+// Enter/Space trigger the same handler as a click.
+function onActivate(handler: () => void) {
+  return (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handler();
+    }
+  };
+}
+
 export default function HomePage() {
   const router = useRouter();
   const { mode, toggleMode, accentHue } = useEditorTheme();
@@ -99,7 +110,7 @@ export default function HomePage() {
         <aside className="home-side">
           <div className="group-label">Library</div>
           {SECTIONS.map(s => (
-            <div key={s.id} className={`side-item ${filter === s.id ? 'active' : ''}`} onClick={() => setFilter(s.id)}>
+            <div key={s.id} className={`side-item ${filter === s.id ? 'active' : ''}`} role="button" tabIndex={0} aria-pressed={filter === s.id} onClick={() => setFilter(s.id)} onKeyDown={onActivate(() => setFilter(s.id))}>
               <s.icon size={14} /> <span>{s.label}</span>
               <span className="count">{String(s.id === 'all' ? decks.length : 0).padStart(2, '0')}</span>
             </div>
@@ -115,7 +126,7 @@ export default function HomePage() {
 
           <div className="home-actions">
             {NEW_CARDS.map(c => (
-              <div key={c.id} className={`new-card ${c.primary ? 'primary' : ''}`} onClick={() => setOpen(true)}>
+              <div key={c.id} className={`new-card ${c.primary ? 'primary' : ''}`} role="button" tabIndex={0} aria-label={c.title} onClick={() => setOpen(true)} onKeyDown={onActivate(() => setOpen(true))}>
                 <div className="preview">
                   <c.icon size={22} />
                 </div>
@@ -141,7 +152,7 @@ export default function HomePage() {
           ) : (
             <div className="deck-grid" data-testid="decks-grid">
               {visibleDecks.map((deck, i) => (
-                <div key={deck.id} className="deck-card" data-testid={`deck-card-${deck.id}`} onClick={() => router.push(`/editor/${deck.id}`)}>
+                <div key={deck.id} className="deck-card" data-testid={`deck-card-${deck.id}`} role="button" tabIndex={0} aria-label={`Open ${deck.title}`} onClick={() => router.push(`/editor/${deck.id}`)} onKeyDown={onActivate(() => router.push(`/editor/${deck.id}`))}>
                   <div className="cover"><DeckCover deck={deck} /></div>
                   <div className="info">
                     <div className="title">

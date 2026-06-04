@@ -81,7 +81,9 @@ export default function PresentPage() {
               if (e.clientX - rect.left > rect.width / 2) goNext(); else goPrev();
             }}
           >
-            <SlideView slide={slide} testid="present-slide" />
+            <div className="slide-fit">
+              <SlideView slide={slide} testid="present-slide" />
+            </div>
           </div>
         </div>
 
