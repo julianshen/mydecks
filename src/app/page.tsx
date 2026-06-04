@@ -62,7 +62,9 @@ export default function HomePage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ title: newTitle || 'Untitled Deck' }),
     });
-    const deck = await res.json();
+    if (!res.ok) return;
+    const deck = (await res.json()) as Partial<Deck>;
+    if (!deck.id) return;
     router.push(`/editor/${deck.id}`);
   }
 
@@ -72,8 +74,9 @@ export default function HomePage() {
 
   async function deleteDeck(id: string) {
     if (!confirm('Delete this deck?')) return;
-    await fetch(`/api/decks/${id}`, { method: 'DELETE' });
-    setDecks(decks.filter(d => d.id !== id));
+    const res = await fetch(`/api/decks/${id}`, { method: 'DELETE' });
+    if (!res.ok) return;
+    setDecks(prev => prev.filter(d => d.id !== id));
   }
 
   return (

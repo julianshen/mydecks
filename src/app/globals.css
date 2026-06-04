@@ -501,7 +501,8 @@
 .sc-app .deck-card .badge { font-family: var(--f-mono); font-size: 9.5px; padding: 1px 5px; border-radius: 3px; font-weight: 500; flex-shrink: 0; }
 .sc-app .deck-card .sub { font-family: var(--f-mono); font-size: 10.5px; color: var(--ink-3); display: flex; align-items: center; gap: 8px; }
 .sc-app .deck-card .del { opacity: 0; color: var(--danger); transition: opacity .12s; }
-.sc-app .deck-card:hover .del { opacity: 1; }
+.sc-app .deck-card:hover .del,
+.sc-app .deck-card:focus-within .del { opacity: 1; }
 .sc-app .home-empty { text-align: center; padding: 80px 20px; color: var(--ink-3); }
 
 /* presenter (own dark surface; uses tokens for accent + mono) */

@@ -33,7 +33,7 @@ export default function PresentPage() {
     return () => clearInterval(t);
   }, []);
 
-  const goNext = useCallback(() => setCurrentIndex(prev => Math.min(slides.length - 1, prev + 1)), [slides.length]);
+  const goNext = useCallback(() => setCurrentIndex(prev => slides.length === 0 ? 0 : Math.min(slides.length - 1, prev + 1)), [slides.length]);
   const goPrev = useCallback(() => setCurrentIndex(prev => Math.max(0, prev - 1)), []);
 
   const toggleFullscreen = () => {
@@ -46,7 +46,7 @@ export default function PresentPage() {
       if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); goNext(); }
       if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); goPrev(); }
       if (e.key === 'Escape') { router.push(`/editor/${deckId}`); }
-      if (e.key === 'f') { toggleFullscreen(); }
+      if (e.key.toLowerCase() === 'f' && !e.ctrlKey && !e.metaKey && !e.altKey && !e.repeat) { e.preventDefault(); toggleFullscreen(); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);

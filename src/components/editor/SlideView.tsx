@@ -91,6 +91,7 @@ export default function SlideView({ slide, testid, className }: Props) {
                 borderRadius,
                 border: `${(style.borderWidth || 0) * scale}px solid ${style.borderColor || 'transparent'}`,
                 opacity: style.opacity ?? 1,
+                clipPath: shapeType === 'triangle' ? 'polygon(50% 0%, 0% 100%, 100% 100%)' : undefined,
               }} />
             </div>
           );
