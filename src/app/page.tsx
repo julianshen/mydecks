@@ -45,6 +45,10 @@ function DeckCover({ deck }: { deck: Deck }) {
 // Enter/Space trigger the same handler as a click.
 function onActivate(handler: () => void) {
   return (e: React.KeyboardEvent) => {
+    // Only act on the element itself — ignore Enter/Space that bubbled up from
+    // nested controls (e.g. a deck card's Edit/Present/Delete buttons), so those
+    // keep their own native keyboard activation.
+    if (e.target !== e.currentTarget) return;
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       handler();
