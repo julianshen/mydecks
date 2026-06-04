@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
-import { join } from 'path';
+import { mkdirSync } from 'fs';
+import { dirname, join } from 'path';
 
 const DB_PATH = process.env.DB_PATH || join(process.cwd(), 'data', 'mydecks.db');
 
@@ -7,6 +8,10 @@ let db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (!db) {
+    // Ensure the parent directory exists; the data/ dir is gitignored and
+    // may be absent on a fresh checkout (e.g. CI), which would otherwise
+    // make better-sqlite3 fail to open/create the database file.
+    mkdirSync(dirname(DB_PATH), { recursive: true });
     db = new Database(DB_PATH);
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
