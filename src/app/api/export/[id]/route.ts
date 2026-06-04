@@ -79,6 +79,21 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           fill: { color: (style.backgroundColor || '#3B82F6').replace('#', '') },
           line: { color: (style.borderColor || 'transparent').replace('#', ''), width: style.borderWidth || 0 },
         });
+      } else if (el.type === 'chart') {
+        const cd = content.chartData || { labels: [], datasets: [] };
+        const series = (cd.datasets || []).map((ds: { label?: string; data?: number[] }) => ({
+          name: ds.label || 'Series',
+          labels: cd.labels || [],
+          values: ds.data || [],
+        }));
+        if (series.length > 0) {
+          const chartType = (content.chartType || 'bar') as Parameters<typeof slidePptx.addChart>[0];
+          slidePptx.addChart(chartType, series as Parameters<typeof slidePptx.addChart>[1], {
+            x, y, w, h,
+            showLegend: true,
+            showTitle: false,
+          });
+        }
       }
     }
   }

@@ -40,7 +40,7 @@ export interface ElementContent {
   alt?: string;
   shapeType?: 'rect' | 'circle' | 'triangle';
   chartType?: 'bar' | 'line' | 'pie';
-  chartData?: { labels: string[]; datasets: number[] };
+  chartData?: { labels: string[]; datasets: { label: string; data: number[]; backgroundColor?: string; borderColor?: string }[] };
   tableData?: string[][];
   url?: string;
 }
@@ -64,7 +64,7 @@ export interface EditorState {
   selectedSlideId: string | null;
   selectedElementId: string | null;
   zoom: number;
-  mode: 'select' | 'text' | 'heading' | 'image' | 'shape' | 'line';
+  mode: 'select' | 'text' | 'heading' | 'image' | 'shape' | 'line' | 'chart';
   showGrid: boolean;
   snapToGrid: boolean;
 }

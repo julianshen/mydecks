@@ -2,11 +2,12 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import SlideCanvas from '@/components/editor/SlideCanvas';
 import Toolbar from '@/components/editor/Toolbar';
 import SlidePanel from '@/components/editor/SlidePanel';
 import PropertiesPanel from '@/components/editor/PropertiesPanel';
+import Topbar from '@/components/editor/Topbar';
+import { useEditorTheme, ACCENTS } from '@/components/editor/useEditorTheme';
 import type { Deck, Slide, SlideElement, EditorState } from '@/types';
 import { SLIDE_WIDTH, SLIDE_HEIGHT } from '@/types';
 
@@ -15,8 +16,9 @@ export default function EditorPage() {
   const router = useRouter();
   const deckId = params.id?.[0];
 
-  const [, setDeck] = useState<Deck | null>(null);
+  const [deck, setDeck] = useState<Deck | null>(null);
   const [slides, setSlides] = useState<Slide[]>([]);
+  const { mode: themeMode, toggleMode, accentHue, setAccentHue } = useEditorTheme();
   const [editorState, setEditorState] = useState<EditorState>({
     selectedSlideId: null,
     selectedElementId: null,
@@ -160,7 +162,11 @@ export default function EditorPage() {
 
   const handleCanvasClick = (e: React.MouseEvent) => {
     if (editorState.mode === 'select') return;
-    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    // Only insert when the click lands on the slide surface — not on the
+    // rulers, status bar, or zoom controls that also live in this wrapper.
+    const frame = (e.target as HTMLElement).closest('[data-role="slide-background"]') as HTMLElement | null;
+    if (!frame) return;
+    const rect = frame.getBoundingClientRect();
     const x = (e.clientX - rect.left) / editorState.zoom;
     const y = (e.clientY - rect.top) / editorState.zoom;
 
@@ -169,16 +175,24 @@ export default function EditorPage() {
       type: editorState.mode,
       x: Math.max(0, Math.min(SLIDE_WIDTH - 100, x - 50)),
       y: Math.max(0, Math.min(SLIDE_HEIGHT - 50, y - 25)),
-      width: editorState.mode === 'line' ? 200 : 300,
-      height: editorState.mode === 'line' ? 4 : editorState.mode === 'heading' ? 60 : 50,
+      width: editorState.mode === 'line' ? 200 : editorState.mode === 'chart' ? 480 : 300,
+      height: editorState.mode === 'line' ? 4 : editorState.mode === 'heading' ? 60 : editorState.mode === 'chart' ? 300 : 50,
       z_index: (slides.find(s => s.id === editorState.selectedSlideId)?.elements?.length || 0) + 1,
-      content: editorState.mode === 'image' ? { src: '', alt: '' } : editorState.mode === 'shape' ? { shapeType: 'rect' } : { text: editorState.mode === 'heading' ? 'Heading' : 'Text' },
+      content: editorState.mode === 'image'
+        ? { src: '', alt: '' }
+        : editorState.mode === 'shape'
+        ? { shapeType: 'rect' }
+        : editorState.mode === 'chart'
+        ? { chartType: 'bar', chartData: { labels: ['Q1', 'Q2', 'Q3', 'Q4'], datasets: [{ label: 'Revenue', data: [42, 58, 51, 73] }] } }
+        : { text: editorState.mode === 'heading' ? 'Heading' : 'Text' },
       style: editorState.mode === 'heading'
         ? { fontSize: 36, color: '#1a1a1a', fontWeight: 'bold' }
         : editorState.mode === 'shape'
         ? { backgroundColor: '#3B82F6', borderRadius: 8 }
         : editorState.mode === 'line'
         ? { borderColor: '#000000', borderWidth: 2 }
+        : editorState.mode === 'chart'
+        ? { backgroundColor: '#ffffff' }
         : { fontSize: 18, color: '#333333' },
     };
 
@@ -263,57 +277,83 @@ export default function EditorPage() {
 
   const currentSlide = slides.find(s => s.id === editorState.selectedSlideId);
   const selectedElement = currentSlide?.elements?.find(e => e.id === editorState.selectedElementId) || null;
+  const selStyle = selectedElement
+    ? (typeof selectedElement.style === 'string' ? JSON.parse(selectedElement.style) : selectedElement.style)
+    : {};
+  const canAlign = !!selectedElement && (selectedElement.type === 'text' || selectedElement.type === 'heading');
+  const accentName = ACCENTS.find(a => a.hue === accentHue)?.name ?? 'Custom';
+  const pickTool = (mode: EditorState['mode']) => setEditorState(prev => ({ ...prev, mode }));
 
   return (
-    <TooltipProvider>
-      <div className="h-screen flex flex-col bg-zinc-50" data-testid="editor-page">
-        <Toolbar
-          editorState={editorState}
-          onChangeMode={mode => setEditorState(prev => ({ ...prev, mode }))}
-          onToggleGrid={() => setEditorState(prev => ({ ...prev, showGrid: !prev.showGrid }))}
-          onToggleSnap={() => setEditorState(prev => ({ ...prev, snapToGrid: !prev.snapToGrid }))}
-          onZoomIn={() => setEditorState(prev => ({ ...prev, zoom: Math.min(2, prev.zoom + 0.1) }))}
-          onZoomOut={() => setEditorState(prev => ({ ...prev, zoom: Math.max(0.3, prev.zoom - 0.1) }))}
-          onPresent={() => router.push(`/present/${deckId}`)}
-          onExport={handleExport}
-          onDeleteElement={handleDeleteElement}
-          onDuplicateElement={handleDuplicate}
-          onBringForward={handleBringForward}
-          onSendBackward={handleSendBackward}
-          canUndo={historyIndex > 0}
-          canRedo={historyIndex < history.length - 1}
-          onUndo={handleUndo}
-          onRedo={handleRedo}
+    <div
+      className="sc-app"
+      data-theme={themeMode}
+      data-testid="editor-page"
+      style={{ '--accent-h': accentHue } as React.CSSProperties}
+    >
+      <Topbar
+        docName={deck?.title || 'Untitled Deck'}
+        themeName={`Theme · ${accentName}`}
+        mode={themeMode}
+        onToggleMode={toggleMode}
+        onPresent={() => router.push(`/present/${deckId}`)}
+        onExport={handleExport}
+      />
+      <Toolbar
+        editorState={editorState}
+        onChangeMode={pickTool}
+        onToggleGrid={() => setEditorState(prev => ({ ...prev, showGrid: !prev.showGrid }))}
+        onToggleSnap={() => setEditorState(prev => ({ ...prev, snapToGrid: !prev.snapToGrid }))}
+        onDeleteElement={handleDeleteElement}
+        onDuplicateElement={handleDuplicate}
+        onBringForward={handleBringForward}
+        onSendBackward={handleSendBackward}
+        canUndo={historyIndex > 0}
+        canRedo={historyIndex < history.length - 1}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        layout={currentSlide?.layout || 'blank'}
+        onChangeLayout={l => currentSlide && handleUpdateSlide(currentSlide.id, { layout: l })}
+        accentHue={accentHue}
+        onChangeAccent={setAccentHue}
+        hasSelection={!!selectedElement}
+        selectedAlign={selStyle.textAlign}
+        onAlign={a => selectedElement && updateElement(selectedElement.id, { style: { textAlign: a as 'left' | 'center' | 'right' } })}
+        canAlign={canAlign}
+      />
+      <div className="sc-body">
+        <SlidePanel
+          slides={slides}
+          selectedId={editorState.selectedSlideId}
+          onSelect={id => setEditorState(prev => ({ ...prev, selectedSlideId: id, selectedElementId: null }))}
+          onAdd={handleAddSlide}
+          onDelete={handleDeleteSlide}
+          onReorder={handleReorderSlides}
         />
-        <div className="flex-1 flex overflow-hidden">
-          <SlidePanel
-            slides={slides}
-            selectedId={editorState.selectedSlideId}
-            onSelect={id => setEditorState(prev => ({ ...prev, selectedSlideId: id, selectedElementId: null }))}
-            onAdd={handleAddSlide}
-            onDelete={handleDeleteSlide}
-            onReorder={handleReorderSlides}
-          />
+        <div data-testid="canvas-wrapper" onClick={handleCanvasClick} style={{ minWidth: 0, display: 'grid' }}>
           {currentSlide ? (
-            <div className="flex-1 overflow-auto" onClick={handleCanvasClick} data-testid="canvas-wrapper">
-              <SlideCanvas
-                slide={currentSlide}
-                editorState={editorState}
-                onUpdateElement={updateElement}
-                onSelectElement={id => setEditorState(prev => ({ ...prev, selectedElementId: id }))}
-              />
-            </div>
+            <SlideCanvas
+              slide={currentSlide}
+              editorState={editorState}
+              onUpdateElement={updateElement}
+              onSelectElement={id => setEditorState(prev => ({ ...prev, selectedElementId: id }))}
+              onZoomIn={() => setEditorState(prev => ({ ...prev, zoom: Math.min(2, prev.zoom + 0.1) }))}
+              onZoomOut={() => setEditorState(prev => ({ ...prev, zoom: Math.max(0.3, prev.zoom - 0.1) }))}
+            />
           ) : (
-            <div className="flex-1 flex items-center justify-center text-zinc-400">No slide selected</div>
+            <div className="sc-empty" style={{ alignSelf: 'center' }}>No slide selected</div>
           )}
-          <PropertiesPanel
-            element={selectedElement}
-            slide={currentSlide || null}
-            onUpdateElement={updateElement}
-            onUpdateSlide={handleUpdateSlide}
-          />
         </div>
+        <PropertiesPanel
+          element={selectedElement}
+          slide={currentSlide || null}
+          onUpdateElement={updateElement}
+          onUpdateSlide={handleUpdateSlide}
+          accentHue={accentHue}
+          onChangeAccent={setAccentHue}
+          onPickTool={pickTool}
+        />
       </div>
-    </TooltipProvider>
+    </div>
   );
 }

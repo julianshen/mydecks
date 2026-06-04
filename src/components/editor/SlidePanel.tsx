@@ -1,9 +1,19 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Plus, Trash2, GripVertical } from 'lucide-react';
-import type { Slide } from '@/types';
+import { Plus, Trash2 } from 'lucide-react';
+import { SLIDE_WIDTH, SLIDE_HEIGHT } from '@/types';
+import type { Slide, ElementStyle, ElementContent } from '@/types';
+
+// Tolerate malformed/null JSON so one bad row can't crash the whole panel.
+function safeParse(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object') return value as Record<string, unknown>;
+  if (typeof value !== 'string') return {};
+  try {
+    return JSON.parse(value);
+  } catch {
+    return {};
+  }
+}
 
 interface Props {
   slides: Slide[];
@@ -14,85 +24,89 @@ interface Props {
   onReorder: (from: number, to: number) => void;
 }
 
+function MiniSlide({ slide }: { slide: Slide }) {
+  return (
+    <div
+      className="sc-thumb-slide"
+      style={{
+        backgroundColor: slide.background_color || '#ffffff',
+        backgroundImage: slide.background_image ? `url(${slide.background_image})` : undefined,
+        backgroundSize: 'cover',
+      }}
+    >
+      {slide.elements?.map(el => {
+        const style = safeParse(el.style) as ElementStyle;
+        const content = safeParse(el.content) as ElementContent;
+        return (
+          <div
+            key={el.id}
+            style={{
+              position: 'absolute',
+              left: `${(el.x / SLIDE_WIDTH) * 100}%`,
+              top: `${(el.y / SLIDE_HEIGHT) * 100}%`,
+              width: `${(el.width / SLIDE_WIDTH) * 100}%`,
+              height: `${(el.height / SLIDE_HEIGHT) * 100}%`,
+              fontSize: `${Math.max(2, ((style.fontSize || 16) / SLIDE_WIDTH) * 100)}cqw`,
+              fontWeight: style.fontWeight || 'normal',
+              color: style.color || '#000',
+              backgroundColor: el.type === 'shape' || el.type === 'line' ? (style.backgroundColor || style.borderColor || '#3B82F6') : (style.backgroundColor || 'transparent'),
+              borderRadius: el.type === 'shape' && content.shapeType === 'circle' ? '50%' : undefined,
+              overflow: 'hidden',
+              lineHeight: 1.1,
+              whiteSpace: 'nowrap',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {el.type === 'text' || el.type === 'heading' ? content.text : ''}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function SlidePanel({ slides, selectedId, onSelect, onAdd, onDelete, onReorder }: Props) {
   return (
-    <div className="w-56 bg-zinc-100 border-r flex flex-col" data-testid="slide-panel">
-      <div className="p-3 border-b flex items-center justify-between">
-        <span className="text-xs font-semibold text-zinc-500 uppercase">Slides ({slides.length})</span>
-        <Button size="sm" variant="ghost" onClick={onAdd} data-testid="add-slide-btn">
-          <Plus className="h-4 w-4" />
-        </Button>
+    <div className="sc-leftpane" data-testid="slide-panel" style={{ containerType: 'inline-size' } as React.CSSProperties}>
+      <div className="sc-pane-header">
+        <span>Slides · {slides.length}</span>
+        <div className="sc-pane-header-actions">
+          <button className="sc-iconbtn" onClick={onAdd} title="Add slide" data-testid="add-slide-btn">
+            <Plus size={15} />
+          </button>
+        </div>
       </div>
-      <ScrollArea className="flex-1">
-        <div className="p-2 space-y-2">
-          {slides.map((slide, index) => (
-            <div
-              key={slide.id}
-              onClick={() => onSelect(slide.id)}
-              className={`group relative cursor-pointer rounded border-2 transition-all ${
-                selectedId === slide.id ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-zinc-300'
-              }`}
-              data-testid={`slide-thumb-${slide.id}`}
-              draggable
-              onDragStart={(e) => e.dataTransfer.setData('slide-index', String(index))}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => {
-                const from = parseInt(e.dataTransfer.getData('slide-index'));
-                onReorder(from, index);
-              }}
-            >
-              <div className="flex items-center gap-1 px-1 pt-1">
-                <GripVertical className="h-3 w-3 text-zinc-400 opacity-0 group-hover:opacity-100" />
-                <span className="text-[10px] text-zinc-400">{index + 1}</span>
-              </div>
-              <div
-                className="mx-auto mb-1 rounded bg-white shadow-sm overflow-hidden"
-                style={{
-                  width: 180,
-                  height: 101,
-                  backgroundColor: slide.background_color || '#ffffff',
-                  backgroundImage: slide.background_image ? `url(${slide.background_image})` : undefined,
-                  backgroundSize: 'cover',
-                }}
-              >
-                {slide.elements?.map((el) => {
-                  const style = typeof el.style === 'string' ? JSON.parse(el.style) : el.style;
-                  const content = typeof el.content === 'string' ? JSON.parse(el.content) : el.content;
-                  return (
-                    <div
-                      key={el.id}
-                      style={{
-                        position: 'absolute',
-                        left: (el.x / 960) * 180,
-                        top: (el.y / 540) * 101,
-                        width: (el.width / 960) * 180,
-                        height: (el.height / 540) * 101,
-                        fontSize: (style.fontSize || 16) * 0.15,
-                        color: style.color || '#000',
-                        backgroundColor: style.backgroundColor || 'transparent',
-                        overflow: 'hidden',
-                        whiteSpace: 'nowrap',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      {content.text?.slice(0, 20)}
-                    </div>
-                  );
-                })}
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="absolute top-1 right-1 h-5 w-5 p-0 opacity-0 group-hover:opacity-100 text-red-500"
-                onClick={(e) => { e.stopPropagation(); onDelete(slide.id); }}
+
+      <div className="sc-thumbs">
+        {slides.map((slide, index) => (
+          <div
+            key={slide.id}
+            className={`sc-thumb ${selectedId === slide.id ? 'active' : ''}`}
+            data-testid={`slide-thumb-${slide.id}`}
+            onClick={() => onSelect(slide.id)}
+            draggable
+            onDragStart={e => e.dataTransfer.setData('slide-index', String(index))}
+            onDragOver={e => e.preventDefault()}
+            onDrop={e => {
+              const from = parseInt(e.dataTransfer.getData('slide-index'));
+              if (!Number.isNaN(from)) onReorder(from, index);
+            }}
+          >
+            <div className="sc-thumb-num">{String(index + 1).padStart(2, '0')}</div>
+            <div style={{ position: 'relative', containerType: 'inline-size' } as React.CSSProperties}>
+              <MiniSlide slide={slide} />
+              <button
+                className="sc-thumb-del"
+                onClick={e => { e.stopPropagation(); onDelete(slide.id); }}
+                title="Delete slide"
                 data-testid={`delete-slide-${slide.id}`}
               >
-                <Trash2 className="h-3 w-3" />
-              </Button>
+                <Trash2 size={11} />
+              </button>
             </div>
-          ))}
-        </div>
-      </ScrollArea>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

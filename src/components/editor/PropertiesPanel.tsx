@@ -1,164 +1,234 @@
 'use client';
 
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { SlideElement, Slide } from '@/types';
+import { Type, Heading, Image as ImageIcon, Square, Minus, BarChart3 } from 'lucide-react';
+import type { SlideElement, Slide, EditorState } from '@/types';
+import { ACCENTS } from './useEditorTheme';
 
 interface Props {
   element: SlideElement | null;
   slide: Slide | null;
   onUpdateElement: (id: string, updates: Partial<SlideElement>) => void;
   onUpdateSlide: (id: string, updates: Partial<Slide>) => void;
+  accentHue: number;
+  onChangeAccent: (hue: number) => void;
+  onPickTool: (mode: EditorState['mode']) => void;
 }
 
-export default function PropertiesPanel({ element, slide, onUpdateElement, onUpdateSlide }: Props) {
-  const [imgUrl, setImgUrl] = useState('');
+const COMPONENTS: { label: string; icon: typeof Type; mode: EditorState['mode'] }[] = [
+  { label: 'Text', icon: Type, mode: 'text' },
+  { label: 'Heading', icon: Heading, mode: 'heading' },
+  { label: 'Image', icon: ImageIcon, mode: 'image' },
+  { label: 'Shape', icon: Square, mode: 'shape' },
+  { label: 'Chart', icon: BarChart3, mode: 'chart' },
+  { label: 'Line', icon: Minus, mode: 'line' },
+];
 
-  if (!element && !slide) {
-    return (
-      <div className="w-64 bg-white border-l p-4 text-sm text-zinc-400" data-testid="properties-panel">
-        Select an element or slide to edit properties
-      </div>
-    );
+const LAYOUTS = [
+  { value: 'blank', label: 'Blank' },
+  { value: 'title', label: 'Title' },
+  { value: 'title-content', label: 'Title + Content' },
+  { value: 'two-column', label: 'Two Column' },
+  { value: 'image-text', label: 'Image + Text' },
+];
+
+function NumField({ label, value, onChange, testid }: { label: string; value: number; onChange: (v: number) => void; testid?: string }) {
+  return (
+    <div className="sc-input-group">
+      <span className="ico">{label}</span>
+      <input
+        type="number"
+        value={Number.isFinite(value) ? value : ''}
+        onChange={e => {
+          const n = Number(e.target.value);
+          if (Number.isFinite(n)) onChange(n);
+        }}
+        data-testid={testid}
+      />
+    </div>
+  );
+}
+
+export default function PropertiesPanel({ element, slide, onUpdateElement, onUpdateSlide, accentHue, onChangeAccent, onPickTool }: Props) {
+  const [tab, setTab] = useState<'design' | 'properties'>('design');
+
+  // Follow the selection: jump to Properties when a new element is picked.
+  // Adjusting state during render (per React docs) avoids a cascading effect.
+  const [prevElId, setPrevElId] = useState<string | null>(element?.id ?? null);
+  if (element && element.id !== prevElId) {
+    setPrevElId(element.id);
+    setTab('properties');
+  } else if (!element && prevElId !== null) {
+    setPrevElId(null);
   }
 
   const elStyle = element ? (typeof element.style === 'string' ? JSON.parse(element.style) : element.style) : {};
   const elContent = element ? (typeof element.content === 'string' ? JSON.parse(element.content) : element.content) : {};
+  const [imgUrl, setImgUrl] = useState('');
 
   const updateStyle = (key: string, value: unknown) => {
     if (!element) return;
     onUpdateElement(element.id, { style: { ...elStyle, [key]: value } });
   };
-
   const updateContent = (key: string, value: unknown) => {
     if (!element) return;
     onUpdateElement(element.id, { content: { ...elContent, [key]: value } });
   };
 
   return (
-    <div className="w-64 bg-white border-l flex flex-col" data-testid="properties-panel">
-      <Tabs defaultValue={element ? 'element' : 'slide'} className="flex-1 flex flex-col">
-        <TabsList className="mx-3 mt-3">
-          {element && <TabsTrigger value="element" data-testid="tab-element">Element</TabsTrigger>}
-          <TabsTrigger value="slide" data-testid="tab-slide">Slide</TabsTrigger>
-        </TabsList>
+    <div className="sc-rightpane" data-testid="properties-panel">
+      <div className="sc-inspector-tabs">
+        <button className={tab === 'design' ? 'active' : ''} onClick={() => setTab('design')} data-testid="tab-design">Design</button>
+        <button className={tab === 'properties' ? 'active' : ''} onClick={() => setTab('properties')} data-testid="tab-properties">Properties</button>
+      </div>
 
-        {element && (
-          <TabsContent value="element" className="flex-1 overflow-auto px-3 pb-3 space-y-4">
-            <div>
-              <Label className="text-xs uppercase text-zinc-500">Type</Label>
-              <p className="text-sm font-medium capitalize" data-testid="prop-type">{element.type}</p>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-2">
-              <Label className="text-xs uppercase text-zinc-500">Position & Size</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div><Label className="text-[10px]">X</Label><Input type="number" value={Math.round(element.x)} onChange={e => onUpdateElement(element.id, { x: Number(e.target.value) })} data-testid="prop-x" /></div>
-                <div><Label className="text-[10px]">Y</Label><Input type="number" value={Math.round(element.y)} onChange={e => onUpdateElement(element.id, { y: Number(e.target.value) })} data-testid="prop-y" /></div>
-                <div><Label className="text-[10px]">W</Label><Input type="number" value={Math.round(element.width)} onChange={e => onUpdateElement(element.id, { width: Number(e.target.value) })} data-testid="prop-w" /></div>
-                <div><Label className="text-[10px]">H</Label><Input type="number" value={Math.round(element.height)} onChange={e => onUpdateElement(element.id, { height: Number(e.target.value) })} data-testid="prop-h" /></div>
-              </div>
-              <div>
-                <Label className="text-[10px]">Rotation</Label>
-                <Slider value={[element.rotation]} min={-180} max={180} step={1} onValueChange={(v) => onUpdateElement(element.id, { rotation: Array.isArray(v) ? v[0] : v })} />
+      <div className="sc-inspector-body">
+        {tab === 'design' && (
+          <>
+            <div className="sc-pane-section">
+              <h4>Theme · Accent</h4>
+              <div className="sc-swatch-grid">
+                {ACCENTS.map(a => (
+                  <button
+                    key={a.hue}
+                    className={`sc-swatch ${accentHue === a.hue ? 'active' : ''}`}
+                    style={{ background: a.swatch }}
+                    title={a.name}
+                    onClick={() => onChangeAccent(a.hue)}
+                    data-testid={`accent-${a.hue}`}
+                  />
+                ))}
               </div>
             </div>
 
-            <Separator />
+            <div className="sc-pane-section">
+              <h4>Tokens</h4>
+              <div className="sc-tokens-row"><span className="sw" style={{ background: 'var(--ink)' }} /><span className="name">ink</span><span className="val">text</span></div>
+              <div className="sc-tokens-row"><span className="sw" style={{ background: 'var(--accent)' }} /><span className="name">accent</span><span className="val">oklch · {accentHue}</span></div>
+              <div className="sc-tokens-row"><span className="sw" style={{ background: 'var(--bg-2)' }} /><span className="name">bg-2</span><span className="val">surface</span></div>
+              <div className="sc-tokens-row"><span className="sw" style={{ background: 'var(--line)' }} /><span className="name">line</span><span className="val">hairline</span></div>
+            </div>
 
-            {(element.type === 'text' || element.type === 'heading') && (
-              <div className="space-y-2">
-                <Label className="text-xs uppercase text-zinc-500">Typography</Label>
-                <div><Label className="text-[10px]">Font Size</Label><Input type="number" value={elStyle.fontSize || 16} onChange={e => updateStyle('fontSize', Number(e.target.value))} data-testid="prop-fontsize" /></div>
-                <div><Label className="text-[10px]">Font Family</Label>
-                  <select className="w-full text-sm border rounded px-2 py-1" value={elStyle.fontFamily || 'Arial'} onChange={e => updateStyle('fontFamily', e.target.value)} data-testid="prop-fontfamily">
-                    <option>Arial</option>
-                    <option>Georgia</option>
-                    <option>Times New Roman</option>
-                    <option>Helvetica</option>
-                    <option>Verdana</option>
-                    <option>Courier New</option>
+            <div className="sc-pane-section">
+              <h4>Components <span className="mono" style={{ fontSize: 9, color: 'var(--ink-4)' }}>click to add</span></h4>
+              <div className="sc-lib-rail">
+                {COMPONENTS.map(c => (
+                  <button key={c.label} className="sc-lib-chip" onClick={() => onPickTool(c.mode)} title={`Add ${c.label}`} data-testid={`lib-${c.label.toLowerCase()}`}>
+                    <c.icon size={18} />
+                    <span className="sc-lib-chip-name">{c.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {slide && (
+              <div className="sc-pane-section">
+                <h4>Slide</h4>
+                <div className="sc-field-row">
+                  <label>layout</label>
+                  <select className="sc-native-select" value={slide.layout} onChange={e => onUpdateSlide(slide.id, { layout: e.target.value })} data-testid="prop-layout">
+                    {LAYOUTS.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
                   </select>
                 </div>
-                <div><Label className="text-[10px]">Color</Label><Input type="color" value={elStyle.color || '#000000'} onChange={e => updateStyle('color', e.target.value)} data-testid="prop-color" /></div>
-                <div><Label className="text-[10px]">Align</Label>
-                  <div className="flex gap-1">
-                    {['left', 'center', 'right'].map(a => (
-                      <Button key={a} size="sm" variant={elStyle.textAlign === a ? 'secondary' : 'outline'} className="flex-1 text-xs" onClick={() => updateStyle('textAlign', a)} data-testid={`prop-align-${a}`}>{a[0].toUpperCase()}</Button>
-                    ))}
-                  </div>
-                </div>
-                <div><Label className="text-[10px]">Weight</Label>
-                  <div className="flex gap-1">
-                    {['normal', 'bold'].map(w => (
-                      <Button key={w} size="sm" variant={elStyle.fontWeight === w ? 'secondary' : 'outline'} className="flex-1 text-xs" onClick={() => updateStyle('fontWeight', w)} data-testid={`prop-weight-${w}`}>{w}</Button>
-                    ))}
-                  </div>
+                <div className="sc-field-row">
+                  <label>bg</label>
+                  <input type="color" className="sc-color-input" value={slide.background_color || '#ffffff'} onChange={e => onUpdateSlide(slide.id, { background_color: e.target.value })} data-testid="prop-bg-color" />
                 </div>
               </div>
             )}
-
-            {element.type === 'image' && (
-              <div className="space-y-2">
-                <Label className="text-xs uppercase text-zinc-500">Image</Label>
-                <Input placeholder="Image URL..." value={imgUrl} onChange={e => setImgUrl(e.target.value)} data-testid="prop-img-url" />
-                <Button size="sm" className="w-full" onClick={() => { updateContent('src', imgUrl); setImgUrl(''); }} data-testid="prop-img-apply">Set Image</Button>
-                {elContent.src && <img src={elContent.src} className="w-full h-20 object-cover rounded" alt="preview" />}
-              </div>
-            )}
-
-            {element.type === 'shape' && (
-              <div className="space-y-2">
-                <Label className="text-xs uppercase text-zinc-500">Shape</Label>
-                <div><Label className="text-[10px]">Fill</Label><Input type="color" value={elStyle.backgroundColor || '#3B82F6'} onChange={e => updateStyle('backgroundColor', e.target.value)} data-testid="prop-fill" /></div>
-                <div><Label className="text-[10px]">Border</Label><Input type="color" value={elStyle.borderColor || '#000000'} onChange={e => updateStyle('borderColor', e.target.value)} data-testid="prop-border-color" /></div>
-                <div><Label className="text-[10px]">Border Width</Label><Input type="number" value={elStyle.borderWidth || 0} onChange={e => updateStyle('borderWidth', Number(e.target.value))} data-testid="prop-border-width" /></div>
-                <div><Label className="text-[10px]">Border Radius</Label><Input type="number" value={elStyle.borderRadius || 0} onChange={e => updateStyle('borderRadius', Number(e.target.value))} data-testid="prop-radius" /></div>
-                <div><Label className="text-[10px]">Opacity</Label><Slider value={[elStyle.opacity ?? 1]} min={0} max={1} step={0.05} onValueChange={(v) => updateStyle('opacity', Array.isArray(v) ? v[0] : v)} /></div>
-              </div>
-            )}
-
-            {element.type === 'line' && (
-              <div className="space-y-2">
-                <Label className="text-xs uppercase text-zinc-500">Line</Label>
-                <div><Label className="text-[10px]">Color</Label><Input type="color" value={elStyle.borderColor || '#000000'} onChange={e => updateStyle('borderColor', e.target.value)} data-testid="prop-line-color" /></div>
-                <div><Label className="text-[10px]">Width</Label><Input type="number" value={elStyle.borderWidth || 2} onChange={e => updateStyle('borderWidth', Number(e.target.value))} data-testid="prop-line-width" /></div>
-              </div>
-            )}
-          </TabsContent>
+          </>
         )}
 
-        <TabsContent value="slide" className="flex-1 overflow-auto px-3 pb-3 space-y-4">
-          {slide && (
+        {tab === 'properties' && (
+          !element ? (
+            <div className="sc-empty">Select an element to edit its properties, or use the Design tab to add one.</div>
+          ) : (
             <>
-              <div>
-                <Label className="text-xs uppercase text-zinc-500">Background</Label>
-                <div className="flex gap-2 mt-1">
-                  <Input type="color" value={slide.background_color || '#ffffff'} onChange={e => onUpdateSlide(slide.id, { background_color: e.target.value })} data-testid="prop-bg-color" />
-                  <span className="text-xs text-zinc-500 self-center">{slide.background_color}</span>
+              <div className="sc-pane-section">
+                <h4>{element.type}</h4>
+                <div className="sc-double" style={{ marginBottom: 6 }}>
+                  <NumField label="X" value={Math.round(element.x)} onChange={v => onUpdateElement(element.id, { x: v })} testid="prop-x" />
+                  <NumField label="Y" value={Math.round(element.y)} onChange={v => onUpdateElement(element.id, { y: v })} testid="prop-y" />
+                </div>
+                <div className="sc-double" style={{ marginBottom: 6 }}>
+                  <NumField label="W" value={Math.round(element.width)} onChange={v => onUpdateElement(element.id, { width: v })} testid="prop-w" />
+                  <NumField label="H" value={Math.round(element.height)} onChange={v => onUpdateElement(element.id, { height: v })} testid="prop-h" />
+                </div>
+                <div className="sc-field-row">
+                  <label>angle</label>
+                  <input type="range" min={-180} max={180} step={1} value={element.rotation} onChange={e => onUpdateElement(element.id, { rotation: Number(e.target.value) })} style={{ width: '100%' }} data-testid="prop-rotation" />
                 </div>
               </div>
-              <div>
-                <Label className="text-xs uppercase text-zinc-500">Layout</Label>
-                <select className="w-full text-sm border rounded px-2 py-1 mt-1" value={slide.layout} onChange={e => onUpdateSlide(slide.id, { layout: e.target.value })} data-testid="prop-layout">
-                  <option value="blank">Blank</option>
-                  <option value="title">Title</option>
-                  <option value="title-content">Title + Content</option>
-                  <option value="two-column">Two Column</option>
-                  <option value="image-text">Image + Text</option>
-                </select>
-              </div>
+
+              {(element.type === 'text' || element.type === 'heading') && (
+                <div className="sc-pane-section">
+                  <h4>Type</h4>
+                  <div className="sc-field-row">
+                    <label>size</label>
+                    <NumField label="px" value={elStyle.fontSize || 16} onChange={v => updateStyle('fontSize', v)} testid="prop-fontsize" />
+                  </div>
+                  <div className="sc-field-row">
+                    <label>font</label>
+                    <select className="sc-native-select" value={elStyle.fontFamily || 'Inter'} onChange={e => updateStyle('fontFamily', e.target.value)} data-testid="prop-fontfamily">
+                      <option>Inter</option><option>Arial</option><option>Georgia</option><option>Times New Roman</option><option>Helvetica</option><option>JetBrains Mono</option>
+                    </select>
+                  </div>
+                  <div className="sc-field-row">
+                    <label>color</label>
+                    <input type="color" className="sc-color-input" value={elStyle.color || '#000000'} onChange={e => updateStyle('color', e.target.value)} data-testid="prop-color" />
+                  </div>
+                  <div className="sc-field-row">
+                    <label>align</label>
+                    <div className="sc-seg">
+                      {['left', 'center', 'right'].map(a => (
+                        <button key={a} className={elStyle.textAlign === a ? 'active' : ''} onClick={() => updateStyle('textAlign', a)} data-testid={`prop-align-${a}`}>{a[0].toUpperCase()}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="sc-field-row">
+                    <label>weight</label>
+                    <div className="sc-seg">
+                      {['normal', 'bold'].map(w => (
+                        <button key={w} className={(elStyle.fontWeight || 'normal') === w ? 'active' : ''} onClick={() => updateStyle('fontWeight', w)} data-testid={`prop-weight-${w}`}>{w === 'normal' ? 'R' : 'B'}</button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {element.type === 'image' && (
+                <div className="sc-pane-section">
+                  <h4>Image</h4>
+                  <div className="sc-input-group" style={{ marginBottom: 6 }}>
+                    <input placeholder="Image URL…" value={imgUrl} onChange={e => setImgUrl(e.target.value)} data-testid="prop-img-url" />
+                  </div>
+                  <button className="sc-btn outline" style={{ width: '100%' }} onClick={() => { updateContent('src', imgUrl); setImgUrl(''); }} data-testid="prop-img-apply">Set image</button>
+                  {elContent.src && <img src={elContent.src} alt="preview" style={{ width: '100%', height: 80, objectFit: 'cover', borderRadius: 6, marginTop: 8 }} />}
+                </div>
+              )}
+
+              {element.type === 'shape' && (
+                <div className="sc-pane-section">
+                  <h4>Shape</h4>
+                  <div className="sc-field-row"><label>fill</label><input type="color" className="sc-color-input" value={elStyle.backgroundColor || '#3B82F6'} onChange={e => updateStyle('backgroundColor', e.target.value)} data-testid="prop-fill" /></div>
+                  <div className="sc-field-row"><label>stroke</label><input type="color" className="sc-color-input" value={elStyle.borderColor || '#000000'} onChange={e => updateStyle('borderColor', e.target.value)} data-testid="prop-border-color" /></div>
+                  <div className="sc-field-row"><label>width</label><NumField label="px" value={elStyle.borderWidth || 0} onChange={v => updateStyle('borderWidth', v)} testid="prop-border-width" /></div>
+                  <div className="sc-field-row"><label>radius</label><NumField label="px" value={elStyle.borderRadius || 0} onChange={v => updateStyle('borderRadius', v)} testid="prop-radius" /></div>
+                  <div className="sc-field-row"><label>opacity</label><input type="range" min={0} max={1} step={0.05} value={elStyle.opacity ?? 1} onChange={e => updateStyle('opacity', Number(e.target.value))} style={{ width: '100%' }} data-testid="prop-opacity" /></div>
+                </div>
+              )}
+
+              {element.type === 'line' && (
+                <div className="sc-pane-section">
+                  <h4>Line</h4>
+                  <div className="sc-field-row"><label>color</label><input type="color" className="sc-color-input" value={elStyle.borderColor || '#000000'} onChange={e => updateStyle('borderColor', e.target.value)} data-testid="prop-line-color" /></div>
+                  <div className="sc-field-row"><label>width</label><NumField label="px" value={elStyle.borderWidth || 2} onChange={v => updateStyle('borderWidth', v)} testid="prop-line-width" /></div>
+                </div>
+              )}
             </>
-          )}
-        </TabsContent>
-      </Tabs>
+          )
+        )}
+      </div>
     </div>
   );
 }
