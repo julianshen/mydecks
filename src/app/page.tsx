@@ -2,22 +2,58 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Plus, FileText, Trash2, Edit, Presentation } from 'lucide-react';
+import {
+  Plus, Sparkles, LayoutTemplate, Upload, LayoutGrid, History, Share2, Star,
+  Trash2, Sun, Moon, Play, Pencil,
+} from 'lucide-react';
+import { useEditorTheme } from '@/components/editor/useEditorTheme';
 import type { Deck } from '@/types';
+
+const SECTIONS = [
+  { id: 'all', label: 'All files', icon: LayoutGrid },
+  { id: 'recent', label: 'Recent', icon: History },
+  { id: 'shared', label: 'Shared', icon: Share2 },
+  { id: 'starred', label: 'Starred', icon: Star },
+  { id: 'trash', label: 'Trash', icon: Trash2 },
+];
+
+const NEW_CARDS = [
+  { id: 'blank', title: 'Blank deck', meta: '16:9 · 960×540', icon: Plus, primary: true },
+  { id: 'ai', title: 'Start with AI', meta: 'From a prompt', icon: Sparkles, primary: false },
+  { id: 'tmpl', title: 'From template', meta: '30+ templates', icon: LayoutTemplate, primary: false },
+  { id: 'import', title: 'Import', meta: '.pptx · .key', icon: Upload, primary: false },
+];
+
+// Deterministic tint from the deck id for the dashboard cover.
+function tintFor(id: string): string {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360;
+  return `linear-gradient(135deg, oklch(0.55 0.16 ${h}), oklch(0.45 0.15 ${(h + 40) % 360}))`;
+}
+
+function DeckCover({ deck }: { deck: Deck }) {
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: tintFor(deck.id), color: '#fff', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: 10, left: 12, fontFamily: 'var(--f-mono)', fontSize: 9, opacity: 0.7, letterSpacing: '0.08em' }}>MYDECKS</div>
+      <div style={{ position: 'absolute', bottom: 14, right: 14, width: 30, height: 30, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.3)' }} />
+      <div style={{ position: 'absolute', left: '10%', top: '42%', fontSize: 15, fontWeight: 600, letterSpacing: '-0.02em', lineHeight: 1.1, maxWidth: '70%', overflow: 'hidden' }}>{deck.title}</div>
+    </div>
+  );
+}
 
 export default function HomePage() {
   const router = useRouter();
+  const { mode, toggleMode, accentHue } = useEditorTheme();
   const [decks, setDecks] = useState<Deck[]>([]);
   const [newTitle, setNewTitle] = useState('');
   const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
     fetch('/api/decks')
       .then(r => r.json())
-      .then(setDecks);
+      .then(d => setDecks(Array.isArray(d) ? d : []))
+      .catch(() => setDecks([]));
   }, []);
 
   async function createDeck() {
@@ -27,9 +63,6 @@ export default function HomePage() {
       body: JSON.stringify({ title: newTitle || 'Untitled Deck' }),
     });
     const deck = await res.json();
-    setDecks([deck, ...decks]);
-    setNewTitle('');
-    setOpen(false);
     router.push(`/editor/${deck.id}`);
   }
 
@@ -40,67 +73,106 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50" data-testid="home-page">
-      <header className="border-b bg-white px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Presentation className="h-6 w-6 text-zinc-800" />
-          <h1 className="text-xl font-bold text-zinc-900" data-testid="app-title">MyDecks</h1>
+    <div className="sc-app" data-theme={mode} data-testid="home-page" style={{ '--accent-h': accentHue } as React.CSSProperties}>
+      <div className="sc-topbar">
+        <div className="sc-logo">
+          <span className="sc-logo-mark">M</span>
+          <span data-testid="app-title">MyDecks</span>
         </div>
-        <Button onClick={() => setOpen(true)} data-testid="new-deck-btn">
-          <Plus className="h-4 w-4 mr-1" /> New Deck
-        </Button>
-      </header>
+        <div className="sc-spacer" style={{ flex: 1 }} />
+        <button className="sc-iconbtn" onClick={toggleMode} title="Toggle theme" data-testid="theme-toggle">
+          {mode === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+        </button>
+        <button className="sc-btn accent" onClick={() => setOpen(true)} data-testid="new-deck-btn">
+          <Plus size={14} /> New Deck
+        </button>
+      </div>
 
-      <main className="max-w-6xl mx-auto p-6">
-        {decks.length === 0 ? (
-          <div className="text-center py-20 text-zinc-400" data-testid="empty-state">
-            <FileText className="h-16 w-16 mx-auto mb-4 opacity-50" />
-            <p className="text-lg">No decks yet. Create your first presentation!</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" data-testid="decks-grid">
-            {decks.map(deck => (
-              <Card key={deck.id} className="hover:shadow-md transition-shadow cursor-pointer group" data-testid={`deck-card-${deck.id}`}>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base truncate">{deck.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-zinc-500 mb-3">
-                    {new Date(deck.updated_at).toLocaleDateString()}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => router.push(`/editor/${deck.id}`)} data-testid={`edit-deck-${deck.id}`}>
-                      <Edit className="h-3 w-3 mr-1" /> Edit
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1" onClick={() => router.push(`/present/${deck.id}`)} data-testid={`present-deck-${deck.id}`}>
-                      <Presentation className="h-3 w-3 mr-1" /> Present
-                    </Button>
-                    <Button size="sm" variant="ghost" className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => deleteDeck(deck.id)} data-testid={`delete-deck-${deck.id}`}>
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+      <div className="home">
+        <aside className="home-side">
+          <div className="group-label">Library</div>
+          {SECTIONS.map(s => (
+            <div key={s.id} className={`side-item ${filter === s.id ? 'active' : ''}`} onClick={() => setFilter(s.id)}>
+              <s.icon size={14} /> <span>{s.label}</span>
+              <span className="count">{String(s.id === 'all' ? decks.length : 0).padStart(2, '0')}</span>
+            </div>
+          ))}
+          <div className="group-label">Spaces</div>
+          <div className="side-item"><span style={{ width: 8, height: 8, borderRadius: 2, background: 'var(--accent)' }} /><span>Personal</span></div>
+          <div className="side-item"><span style={{ width: 8, height: 8, borderRadius: 2, background: 'oklch(0.62 0.13 155)' }} /><span>Atlas Co.</span></div>
+        </aside>
+
+        <main className="home-main">
+          <h1>Your presentations</h1>
+          <p className="home-sub">Create, edit, and present — all stored locally.</p>
+
+          <div className="home-actions">
+            {NEW_CARDS.map(c => (
+              <div key={c.id} className={`new-card ${c.primary ? 'primary' : ''}`} onClick={() => setOpen(true)}>
+                <div className="preview">
+                  <c.icon size={22} />
+                </div>
+                <div>
+                  <div className="title">{c.title}</div>
+                  <div className="meta">{c.meta}</div>
+                </div>
+              </div>
             ))}
           </div>
-        )}
-      </main>
 
-      {/* Simple Modal without Portal/Overlay */}
+          <div className="section-head">
+            <h2>Your decks · {String(decks.length).padStart(2, '0')}</h2>
+          </div>
+
+          {decks.length === 0 ? (
+            <div className="home-empty" data-testid="empty-state">
+              <LayoutGrid size={40} style={{ opacity: 0.4, margin: '0 auto 12px' }} />
+              <p>No decks yet. Create your first presentation.</p>
+            </div>
+          ) : (
+            <div className="deck-grid" data-testid="decks-grid">
+              {decks.map((deck, i) => (
+                <div key={deck.id} className="deck-card" data-testid={`deck-card-${deck.id}`} onClick={() => router.push(`/editor/${deck.id}`)}>
+                  <div className="cover"><DeckCover deck={deck} /></div>
+                  <div className="info">
+                    <div className="title">
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{deck.title}</span>
+                      {i === 0 && <span className="badge" style={{ background: 'var(--accent-wash)', color: 'var(--accent)' }}>LATEST</span>}
+                    </div>
+                    <div className="sub">
+                      <span>{new Date(deck.updated_at).toLocaleDateString()}</span>
+                      <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                        <button className="sc-iconbtn" style={{ width: 22, height: 22 }} title="Edit" data-testid={`edit-deck-${deck.id}`} onClick={e => { e.stopPropagation(); router.push(`/editor/${deck.id}`); }}><Pencil size={12} /></button>
+                        <button className="sc-iconbtn" style={{ width: 22, height: 22 }} title="Present" data-testid={`present-deck-${deck.id}`} onClick={e => { e.stopPropagation(); router.push(`/present/${deck.id}`); }}><Play size={12} /></button>
+                        <button className="sc-iconbtn del" style={{ width: 22, height: 22 }} title="Delete" data-testid={`delete-deck-${deck.id}`} onClick={e => { e.stopPropagation(); deleteDeck(deck.id); }}><Trash2 size={12} /></button>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
+
       {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center" data-testid="deck-dialog">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setOpen(false)} />
-          <div className="relative bg-white rounded-lg shadow-lg p-6 w-full max-w-sm mx-4">
-            <h2 className="text-lg font-semibold mb-4">Create New Deck</h2>
-            <div className="flex gap-2">
-              <Input
-                placeholder="Deck title..."
+        <div className="modal-backdrop" onClick={() => setOpen(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-head"><h3>Create new deck</h3></div>
+            <div className="modal-body">
+              <input
+                className="sc-text-input"
+                placeholder="Deck title…"
                 value={newTitle}
+                autoFocus
                 onChange={e => setNewTitle(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && createDeck()}
                 data-testid="deck-title-input"
               />
-              <Button onClick={createDeck} data-testid="create-deck-btn">Create</Button>
+            </div>
+            <div className="modal-foot">
+              <button className="sc-btn quiet" onClick={() => setOpen(false)}>Cancel</button>
+              <button className="sc-btn accent" onClick={createDeck} data-testid="create-deck-btn">Create deck</button>
             </div>
           </div>
         </div>
