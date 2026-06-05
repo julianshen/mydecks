@@ -294,9 +294,10 @@ export default function EditorPage() {
     });
   };
 
-  const handleExport = () => {
+  const handleExport = (format: 'pptx' | 'pdf') => {
     if (!deckId) return;
-    window.open(`/api/export/${deckId}`, '_blank');
+    const query = format === 'pdf' ? '?format=pdf' : '';
+    window.open(`/api/export/${deckId}${query}`, '_blank');
   };
 
   const currentSlide = slides.find(s => s.id === editorState.selectedSlideId);

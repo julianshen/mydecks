@@ -10,12 +10,20 @@ test.describe('Export', () => {
   });
 
   test('should export deck as PPTX', async ({ page }) => {
-    // Wait for download
+    await page.getByTestId('tool-export').click();
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByTestId('tool-export').click(),
+      page.getByTestId('export-pptx').click(),
     ]);
-
     expect(download.suggestedFilename()).toMatch(/\.pptx$/);
+  });
+
+  test('should export deck as PDF', async ({ page }) => {
+    await page.getByTestId('tool-export').click();
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByTestId('export-pdf').click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
   });
 });
