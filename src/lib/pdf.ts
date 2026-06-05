@@ -32,10 +32,13 @@ function hexToRgb(hex: string | undefined, fallback: [number, number, number]): 
 }
 
 // StandardFonts use WinAnsi encoding, which can't encode arbitrary Unicode
-// (emoji, CJK, …) and would throw. Replace anything outside the safe range.
+// (emoji, CJK, …) and would throw. Replace anything outside the safe range,
+// but preserve newlines (used to split paragraphs) and drop carriage returns.
 function sanitize(value: unknown): string {
   return Array.from(String(value ?? '')).map(ch => {
     const cp = ch.codePointAt(0) ?? 0;
+    if (cp === 10) return ch;   // newline — kept for paragraph splitting
+    if (cp === 13) return '';   // carriage return — strip (CRLF → LF)
     if (cp === 9) return ' ';
     if (cp >= 32 && cp <= 126) return ch;
     if (cp >= 160 && cp <= 255) return ch;
@@ -122,7 +125,7 @@ function drawTable(page: PDFPage, regular: PDFFont, bold: PDFFont, el: ExportEle
         borderWidth: borderWidth > 0 ? borderWidth : undefined,
       });
       const font = r === 0 ? bold : regular;
-      const text = fit(font, sanitize(data[r][c]), size, cellW - 8);
+      const text = fit(font, sanitize(data[r][c]).replace(/\n/g, ' '), size, cellW - 8);
       if (text) {
         page.drawText(text, {
           x: left + 4,
@@ -186,20 +189,49 @@ async function drawElement(pdfDoc: PDFDocument, page: PDFPage, regular: PDFFont,
   }
 }
 
+const FETCH_TIMEOUT_MS = 5000;
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+// Best-effort SSRF guard: reject loopback/link-local/private literals so a
+// deck can't make the server fetch internal hosts or cloud metadata. This does
+// not resolve DNS, so a hostname pointing at a private IP can still slip
+// through — full protection needs connect-time IP checks.
+function isBlockedHost(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.internal')) return true;
+  if (h === '0.0.0.0' || h === '::1') return true;
+  if (/^127\./.test(h)) return true;                        // loopback
+  if (/^10\./.test(h)) return true;                         // private
+  if (/^192\.168\./.test(h)) return true;                   // private
+  if (/^169\.254\./.test(h)) return true;                   // link-local (incl. metadata)
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(h)) return true;   // private
+  return false;
+}
+
 async function loadImage(pdfDoc: PDFDocument, src: string) {
   try {
     let bytes: Uint8Array;
     let isPng: boolean;
     if (src.startsWith('data:')) {
       const comma = src.indexOf(',');
+      if (comma === -1) return null;
       const meta = src.slice(5, comma);
-      bytes = Uint8Array.from(Buffer.from(src.slice(comma + 1), meta.includes('base64') ? 'base64' : 'utf8'));
+      // Buffer is a Uint8Array subclass — use it directly, no extra copy.
+      bytes = Buffer.from(src.slice(comma + 1), meta.includes('base64') ? 'base64' : 'utf8');
       isPng = meta.includes('png');
     } else if (src.startsWith('http://') || src.startsWith('https://')) {
-      const res = await fetch(src);
+      let url: URL;
+      try { url = new URL(src); } catch { return null; }
+      if (isBlockedHost(url.hostname)) return null;
+      const res = await fetch(src, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
       if (!res.ok) return null;
-      bytes = new Uint8Array(await res.arrayBuffer());
-      isPng = src.toLowerCase().includes('.png');
+      if (Number(res.headers.get('content-length') || 0) > MAX_IMAGE_BYTES) return null;
+      const buf = Buffer.from(await res.arrayBuffer());
+      if (buf.byteLength > MAX_IMAGE_BYTES) return null;
+      bytes = buf;
+      const contentType = (res.headers.get('content-type') || '').toLowerCase();
+      isPng = contentType.includes('image/png')
+        || (!contentType.includes('image/jpeg') && src.toLowerCase().includes('.png'));
     } else {
       return null;
     }
