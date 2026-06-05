@@ -177,7 +177,8 @@ export function reorderSlides(deckId: string, orderedIds: string[]): boolean {
   const db = getDb();
   const current = (db.prepare('SELECT id FROM slides WHERE deck_id = ?').all(deckId) as { id: string }[]).map(r => r.id);
   const set = new Set(current);
-  if (orderedIds.length !== current.length || !orderedIds.every(id => set.has(id))) return false;
+  // Must be a true permutation: same length, no duplicates, all belong to the deck.
+  if (orderedIds.length !== current.length || new Set(orderedIds).size !== current.length || !orderedIds.every(id => set.has(id))) return false;
   const upd = db.prepare('UPDATE slides SET sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
   db.transaction((ids: string[]) => ids.forEach((id, i) => upd.run(i, id)))(orderedIds);
   return true;
