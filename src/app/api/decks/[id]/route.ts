@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
+import { getDeck } from '@/lib/decks';
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const db = getDb();
-  const deck = db.prepare('SELECT * FROM decks WHERE id = ?').get(id);
+  const deck = getDeck(id);
   if (!deck) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-
-  const slides = db.prepare('SELECT * FROM slides WHERE deck_id = ? ORDER BY sort_order').all(id) as Array<Record<string, unknown> & { id: string }>;
-  for (const slide of slides) {
-    slide.elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(slide.id);
-  }
-
-  return NextResponse.json({ ...(deck as Record<string, unknown>), slides });
+  return NextResponse.json(deck);
 }
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
