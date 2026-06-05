@@ -119,12 +119,14 @@ const handler = createMcpHandler(
       async ({ title, theme, slides }) => {
         const deck = createDeck({ title, theme });
         const deckId = String(deck.id);
+        // Drop the auto-seeded title slide first so the requested slides own
+        // sort_order 0..n-1 with no transient duplicate.
         const placeholder = getDeck(deckId)?.slides[0] as { id?: string } | undefined;
+        if (placeholder?.id) deleteSlide(placeholder.id);
         slides.forEach((s, i) => {
           const slide = addSlide({ deckId, sortOrder: i, layout: s.layout ?? 'blank', backgroundColor: s.background_color });
           if (slide) for (const e of s.elements ?? []) addElementSpec(String(slide.id), e);
         });
-        if (placeholder?.id) deleteSlide(placeholder.id); // drop the seeded title slide
         return ok({ deckId, slideCount: slides.length, editorUrl: editorUrl(deckId) });
       },
     );
