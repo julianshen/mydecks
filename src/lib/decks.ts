@@ -9,7 +9,8 @@ import { randomUUID } from 'crypto';
  * persisted rows.
  */
 
-export type ElementType = 'text' | 'heading' | 'image' | 'shape' | 'line' | 'chart' | 'table';
+export const ELEMENT_TYPES = ['text', 'heading', 'image', 'shape', 'line', 'chart', 'table'] as const;
+export type ElementType = (typeof ELEMENT_TYPES)[number];
 
 interface ElementInput {
   slideId: string;

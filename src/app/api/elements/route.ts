@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { addElement, type ElementType } from '@/lib/decks';
+import { addElement, ELEMENT_TYPES, type ElementType } from '@/lib/decks';
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
+  if (body.type !== undefined && !(ELEMENT_TYPES as readonly string[]).includes(body.type)) {
+    return NextResponse.json({ error: `Invalid element type: ${body.type}` }, { status: 400 });
+  }
   const element = addElement({
     slideId: body.slide_id,
     type: body.type as ElementType | undefined,
