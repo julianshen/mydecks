@@ -1,6 +1,10 @@
 import { createMcpHandler } from 'mcp-handler';
 import { z } from 'zod';
-import { listDecks, getDeck, createDeck, addSlide, addElement, deleteSlide, type ElementType } from '@/lib/decks';
+import {
+  listDecks, getDeck, createDeck, addSlide, addElement, deleteSlide,
+  updateDeck, deleteDeck, updateSlide, reorderSlides, updateElement, deleteElement,
+  type ElementType,
+} from '@/lib/decks';
 import { openInBrowser } from '@/lib/open-browser';
 
 export const runtime = 'nodejs';
@@ -8,6 +12,7 @@ export const runtime = 'nodejs';
 const BASE_URL = (process.env.MYDECKS_BASE_URL || 'http://localhost:3000').replace(/\/$/, '');
 const editorUrl = (id: string) => `${BASE_URL}/editor/${id}`;
 const presentUrl = (id: string) => `${BASE_URL}/present/${id}`;
+const exportUrl = (id: string, format: 'pptx' | 'pdf') => `${BASE_URL}/api/export/${id}${format === 'pdf' ? '?format=pdf' : ''}`;
 
 type ToolResult = { content: { type: 'text'; text: string }[]; isError?: boolean };
 const ok = (data: unknown): ToolResult => ({
@@ -139,6 +144,93 @@ const handler = createMcpHandler(
         if (!getDeck(deckId)) return fail(`Deck ${deckId} not found`);
         const url = mode === 'present' ? presentUrl(deckId) : editorUrl(deckId);
         return ok({ url, opened: openInBrowser(url) });
+      },
+    );
+
+    server.tool(
+      'update_deck',
+      'Update a deck\'s title and/or theme.',
+      { deckId: z.string(), title: z.string().optional(), theme: z.string().optional() },
+      async ({ deckId, title, theme }) => {
+        const deck = updateDeck(deckId, { title, theme });
+        return deck ? ok({ deckId: String(deck.id), title: deck.title, theme: deck.theme }) : fail(`Deck ${deckId} not found`);
+      },
+    );
+
+    server.tool(
+      'delete_deck',
+      'Delete a deck and all of its slides and elements.',
+      { deckId: z.string() },
+      async ({ deckId }) => (deleteDeck(deckId) ? ok({ deleted: deckId }) : fail(`Deck ${deckId} not found`)),
+    );
+
+    server.tool(
+      'update_slide',
+      'Update a slide\'s layout or background color/image (only the provided fields change). To change ordering, use reorder_slides.',
+      {
+        slideId: z.string(),
+        layout: z.enum(LAYOUTS).optional(),
+        background_color: z.string().optional(),
+        background_image: z.string().nullable().optional(),
+      },
+      async ({ slideId, layout, background_color, background_image }) => {
+        const slide = updateSlide(slideId, { layout, background_color, background_image });
+        return slide ? ok({ slideId: String(slide.id) }) : fail(`Slide ${slideId} not found`);
+      },
+    );
+
+    server.tool(
+      'delete_slide',
+      'Delete a slide and its elements.',
+      { slideId: z.string() },
+      async ({ slideId }) => (deleteSlide(slideId) ? ok({ deleted: slideId }) : fail(`Slide ${slideId} not found`)),
+    );
+
+    server.tool(
+      'reorder_slides',
+      'Reorder a deck\'s slides. slideIds must be exactly the deck\'s slide ids in the desired order.',
+      { deckId: z.string(), slideIds: z.array(z.string()).min(1) },
+      async ({ deckId, slideIds }) =>
+        reorderSlides(deckId, slideIds)
+          ? ok({ deckId, order: slideIds })
+          : fail('slideIds must be exactly this deck\'s slide ids (a permutation)'),
+    );
+
+    server.tool(
+      'update_element',
+      'Update an element\'s text/content, position, size, rotation, z-order, or style (only the provided fields change). `text` merges into content; `content` replaces it.',
+      {
+        elementId: z.string(),
+        text: z.string().optional(),
+        content: z.record(z.string(), z.any()).optional(),
+        x: z.number().optional(),
+        y: z.number().optional(),
+        width: z.number().optional(),
+        height: z.number().optional(),
+        rotation: z.number().optional(),
+        z_index: z.number().optional(),
+        style: z.record(z.string(), z.any()).optional(),
+      },
+      async ({ elementId, z_index, ...rest }) => {
+        const el = updateElement(elementId, { ...rest, zIndex: z_index });
+        return el ? ok({ elementId: String(el.id) }) : fail(`Element ${elementId} not found`);
+      },
+    );
+
+    server.tool(
+      'delete_element',
+      'Delete an element from its slide.',
+      { elementId: z.string() },
+      async ({ elementId }) => (deleteElement(elementId) ? ok({ deleted: elementId }) : fail(`Element ${elementId} not found`)),
+    );
+
+    server.tool(
+      'export_deck',
+      'Get a download URL for exporting a deck as PowerPoint (.pptx) or PDF.',
+      { deckId: z.string(), format: z.enum(['pptx', 'pdf']).default('pptx') },
+      async ({ deckId, format }) => {
+        if (!getDeck(deckId)) return fail(`Deck ${deckId} not found`);
+        return ok({ url: exportUrl(deckId, format), format });
       },
     );
   },

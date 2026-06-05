@@ -1,16 +1,33 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type APIRequestContext } from '@playwright/test';
 
 const MCP = '/api/mcp';
 const headers = { 'content-type': 'application/json', accept: 'application/json, text/event-stream' };
 
-// The streamable-HTTP transport replies as an SSE frame; pull the JSON out.
+// The streamable-HTTP transport replies as SSE; parse per event and return the
+// JSON from the final data frame (a response may include preceding events).
 function parseSse(body: string) {
-  const data = body
-    .split('\n')
-    .filter(l => l.startsWith('data: '))
-    .map(l => l.slice('data: '.length))
-    .join('');
-  return JSON.parse(data);
+  const frames = body
+    .split('\n\n')
+    .map(frame => frame.split('\n').filter(l => l.startsWith('data: ')).map(l => l.slice('data: '.length)).join(''))
+    .filter(Boolean);
+  if (!frames.length) throw new Error(`No SSE data frame found. Raw body: ${body}`);
+  return JSON.parse(frames[frames.length - 1]);
+}
+
+let rpcId = 100;
+// Call an MCP tool and return its parsed structured result (the JSON text).
+// Surfaces HTTP/RPC/tool errors directly so failures stay actionable.
+async function callTool(request: APIRequestContext, name: string, args: Record<string, unknown>) {
+  const resp = await request.post(MCP, {
+    headers,
+    data: { jsonrpc: '2.0', id: rpcId++, method: 'tools/call', params: { name, arguments: args } },
+  });
+  const raw = await resp.text();
+  if (!resp.ok()) throw new Error(`MCP HTTP ${resp.status()} for ${name}: ${raw}`);
+  const msg = parseSse(raw);
+  if (msg.error) throw new Error(`MCP RPC error for ${name}: ${JSON.stringify(msg.error)}`);
+  if (msg.result?.isError) throw new Error(`MCP tool error for ${name}: ${msg.result.content?.[0]?.text ?? 'unknown'}`);
+  return JSON.parse(msg.result.content[0].text);
 }
 
 test.describe('MCP server', () => {
@@ -56,5 +73,58 @@ test.describe('MCP server', () => {
     // And the returned editor URL actually loads the editor.
     await page.goto(`/editor/${result.deckId}`);
     await expect(page.getByTestId('editor-page')).toBeVisible();
+  });
+
+  test('supports the full CRUD + export toolset', async ({ request }) => {
+    // create_deck → has one (title) slide
+    const { deckId } = await callTool(request, 'create_deck', { title: 'CRUD' });
+    expect(deckId).toBeTruthy();
+
+    // update_deck
+    await callTool(request, 'update_deck', { deckId, title: 'CRUD Renamed', theme: 'midnight' });
+
+    // add_slide + add_element
+    const { slideId } = await callTool(request, 'add_slide', { deckId, layout: 'blank' });
+    const { elementId } = await callTool(request, 'add_element', { slideId, type: 'text', text: 'hello', x: 10, y: 10, width: 200, height: 40 });
+
+    // update_element (text merges into content; position changes)
+    await callTool(request, 'update_element', { elementId, text: 'updated', x: 50 });
+
+    // update_slide
+    await callTool(request, 'update_slide', { slideId, background_color: '#222222' });
+
+    // Verify state via the API
+    let deck = await (await request.get(`/api/decks/${deckId}`)).json();
+    expect(deck.title).toBe('CRUD Renamed');
+    expect(deck.theme).toBe('midnight');
+    const target = deck.slides.find((s: { id: string }) => s.id === slideId);
+    expect(target.background_color).toBe('#222222');
+    const el = target.elements.find((e: { id: string }) => e.id === elementId);
+    expect(JSON.parse(el.content).text).toBe('updated');
+    expect(el.x).toBe(50);
+
+    // reorder_slides (deck now has the title slide + the added one)
+    const ids = deck.slides.map((s: { id: string }) => s.id);
+    const reordered = await callTool(request, 'reorder_slides', { deckId, slideIds: [...ids].reverse() });
+    expect(reordered.order).toEqual([...ids].reverse());
+
+    // export_deck returns a working URL
+    const exp = await callTool(request, 'export_deck', { deckId, format: 'pdf' });
+    expect(exp.url).toContain(`/api/export/${deckId}`);
+    expect(exp.url).toContain('format=pdf');
+    const pdf = await request.get(`/api/export/${deckId}?format=pdf`);
+    expect(pdf.ok()).toBeTruthy();
+    expect(pdf.headers()['content-type']).toContain('application/pdf');
+
+    // delete_element, delete_slide
+    expect((await callTool(request, 'delete_element', { elementId })).deleted).toBe(elementId);
+    expect((await callTool(request, 'delete_slide', { slideId })).deleted).toBe(slideId);
+    deck = await (await request.get(`/api/decks/${deckId}`)).json();
+    expect(deck.slides.some((s: { id: string }) => s.id === slideId)).toBe(false);
+
+    // delete_deck → gone
+    expect((await callTool(request, 'delete_deck', { deckId })).deleted).toBe(deckId);
+    const after = await request.get(`/api/decks/${deckId}`);
+    expect(after.status()).toBe(404);
   });
 });
