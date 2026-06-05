@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import PptxGenJS from 'pptxgenjs';
 import { normalizeTableData } from '@/components/editor/TableElement';
+import { buildDeckPdf } from '@/lib/pdf';
 
 interface DeckRow {
   title: string;
@@ -25,13 +26,37 @@ interface ElementRow {
   [key: string]: unknown;
 }
 
-export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const format = req.nextUrl.searchParams.get('format');
   const db = getDb();
   const deck = db.prepare('SELECT * FROM decks WHERE id = ?').get(id) as DeckRow | undefined;
   if (!deck) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   const slides = db.prepare('SELECT * FROM slides WHERE deck_id = ? ORDER BY sort_order').all(id) as SlideRow[];
+  const safeName = deck.title.replace(/[^a-zA-Z0-9]/g, '_');
+
+  if (format === 'pdf') {
+    const deckSlides = slides.map(slide => {
+      const elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(slide.id) as ElementRow[];
+      return {
+        background_color: slide.background_color,
+        elements: elements.map(el => ({
+          type: el.type,
+          content: JSON.parse(el.content || '{}'),
+          style: JSON.parse(el.style || '{}'),
+          x: el.x, y: el.y, width: el.width, height: el.height,
+        })),
+      };
+    });
+    const pdf = await buildDeckPdf(deck.title, deckSlides);
+    return new NextResponse(pdf as unknown as BodyInit, {
+      headers: {
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${safeName}.pdf"`,
+      },
+    });
+  }
 
   const pptx = new PptxGenJS();
   pptx.title = deck.title;
