@@ -248,6 +248,28 @@ async function safeFetchImage(initial: string): Promise<Response | null> {
   return null; // too many redirects
 }
 
+// Read a response body but stop once it exceeds `cap` bytes, so a missing or
+// dishonest Content-Length can't make us buffer an unbounded image.
+async function readCapped(res: Response, cap: number): Promise<Buffer | null> {
+  const reader = res.body?.getReader();
+  if (!reader) {
+    const buf = Buffer.from(await res.arrayBuffer());
+    return buf.byteLength > cap ? null : buf;
+  }
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) {
+      total += value.byteLength;
+      if (total > cap) { await reader.cancel(); return null; }
+      chunks.push(value);
+    }
+  }
+  return Buffer.concat(chunks);
+}
+
 async function loadImage(pdfDoc: PDFDocument, src: string) {
   try {
     let bytes: Uint8Array;
@@ -267,9 +289,9 @@ async function loadImage(pdfDoc: PDFDocument, src: string) {
     } else if (src.startsWith('http://') || src.startsWith('https://')) {
       const res = await safeFetchImage(src);
       if (!res || !res.ok) return null;
-      if (Number(res.headers.get('content-length') || 0) > MAX_IMAGE_BYTES) return null;
-      const buf = Buffer.from(await res.arrayBuffer());
-      if (buf.byteLength > MAX_IMAGE_BYTES) return null;
+      if (Number(res.headers.get('content-length') || 0) > MAX_IMAGE_BYTES) return null; // cheap early reject
+      const buf = await readCapped(res, MAX_IMAGE_BYTES);
+      if (!buf) return null;
       bytes = buf;
       const contentType = (res.headers.get('content-type') || '').toLowerCase();
       isPng = contentType.includes('image/png')
