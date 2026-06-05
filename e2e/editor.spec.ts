@@ -50,6 +50,30 @@ test.describe('Editor', () => {
     await expect(page.locator('[data-element-type="shape"]')).toHaveCount(1);
   });
 
+  test('should add table element to canvas', async ({ page }) => {
+    await page.getByTestId('tool-table').click();
+    const canvas = page.getByTestId('slide-canvas');
+    await canvas.click({ position: { x: 300, y: 250 } });
+    await expect(page.locator('[data-element-type="table"]')).toHaveCount(1);
+    // The default 3×3 grid renders 9 cells.
+    await expect(page.locator('[data-element-type="table"] td')).toHaveCount(9);
+  });
+
+  test('should edit a table cell and add a row from the properties panel', async ({ page }) => {
+    await page.getByTestId('tool-table').click();
+    const canvas = page.getByTestId('slide-canvas');
+    await canvas.click({ position: { x: 300, y: 250 } });
+    await expect(page.locator('[data-element-type="table"]')).toHaveCount(1);
+
+    // Element auto-selects after creation → Properties tab shows the editor.
+    await page.getByTestId('prop-table-cell-0-0').fill('Quarter');
+    await expect(page.locator('[data-element-type="table"] td').first()).toHaveText('Quarter');
+
+    // Add a row → 4 rows × 3 cols = 12 cells.
+    await page.getByTestId('prop-table-row-add').click();
+    await expect(page.locator('[data-element-type="table"] td')).toHaveCount(12);
+  });
+
   test('should select and delete element', async ({ page }) => {
     // Add a text element
     await page.getByTestId('tool-text').click();

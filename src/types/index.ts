@@ -64,7 +64,7 @@ export interface EditorState {
   selectedSlideId: string | null;
   selectedElementId: string | null;
   zoom: number;
-  mode: 'select' | 'text' | 'heading' | 'image' | 'shape' | 'line' | 'chart';
+  mode: 'select' | 'text' | 'heading' | 'image' | 'shape' | 'line' | 'chart' | 'table';
   showGrid: boolean;
   snapToGrid: boolean;
 }

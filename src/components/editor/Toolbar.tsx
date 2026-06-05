@@ -2,6 +2,7 @@
 
 import {
   MousePointer2, Type, Heading, Image as ImageIcon, Square, Minus, BarChart3,
+  Table as TableIcon,
   Grid3X3, Magnet, Undo2, Redo2, Copy, BringToFront, SendToBack, Trash2,
   AlignLeft, AlignCenter, AlignRight, LayoutGrid,
 } from 'lucide-react';
@@ -38,6 +39,8 @@ const TOOLS = [
   { mode: 'image' as const, icon: ImageIcon, label: 'Image (I)' },
   { mode: 'shape' as const, icon: Square, label: 'Shape (S)' },
   { mode: 'line' as const, icon: Minus, label: 'Line (L)' },
+  { mode: 'chart' as const, icon: BarChart3, label: 'Chart' },
+  { mode: 'table' as const, icon: TableIcon, label: 'Table' },
 ];
 
 const LAYOUTS = [
@@ -75,9 +78,6 @@ export default function Toolbar({
             <t.icon size={15} />
           </button>
         ))}
-        <button className="sc-iconbtn" title="Chart" onClick={() => onChangeMode('chart')} data-testid="tool-chart">
-          <BarChart3 size={15} />
-        </button>
       </div>
 
       <div className="sc-group">

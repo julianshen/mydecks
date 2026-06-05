@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import type { SlideElement } from '@/types';
 
+import TableElement from './TableElement';
+
 const ChartElement = dynamic(() => import('./ChartElement'), { ssr: false });
 
 interface Props {
@@ -136,6 +138,10 @@ export default function SlideElementView({ element, zoom, isSelected, onMouseDow
           />
         </div>
       );
+    }
+
+    if (element.type === 'table') {
+      return <TableElement content={content} style={style} scale={zoom} />;
     }
 
     // text / heading

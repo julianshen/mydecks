@@ -8,8 +8,20 @@ import SlidePanel from '@/components/editor/SlidePanel';
 import PropertiesPanel from '@/components/editor/PropertiesPanel';
 import Topbar from '@/components/editor/Topbar';
 import { useEditorTheme, ACCENTS } from '@/components/editor/useEditorTheme';
-import type { Deck, Slide, SlideElement, EditorState } from '@/types';
+import type { Deck, Slide, SlideElement, EditorState, ElementContent, ElementStyle } from '@/types';
 import { SLIDE_WIDTH, SLIDE_HEIGHT } from '@/types';
+
+// Per-mode defaults for newly created elements (size, content, style). Keyed by
+// the tool mode that inserts the element; falls back to text for anything else.
+const ELEMENT_DEFAULTS: Record<string, { width: number; height: number; content: ElementContent; style: ElementStyle }> = {
+  text: { width: 300, height: 50, content: { text: 'Text' }, style: { fontSize: 18, color: '#333333' } },
+  heading: { width: 300, height: 60, content: { text: 'Heading' }, style: { fontSize: 36, color: '#1a1a1a', fontWeight: 'bold' } },
+  image: { width: 300, height: 50, content: { src: '', alt: '' }, style: { fontSize: 18, color: '#333333' } },
+  shape: { width: 300, height: 50, content: { shapeType: 'rect' }, style: { backgroundColor: '#3B82F6', borderRadius: 8 } },
+  line: { width: 200, height: 4, content: { text: 'Text' }, style: { borderColor: '#000000', borderWidth: 2 } },
+  chart: { width: 480, height: 300, content: { chartType: 'bar', chartData: { labels: ['Q1', 'Q2', 'Q3', 'Q4'], datasets: [{ label: 'Revenue', data: [42, 58, 51, 73] }] } }, style: { backgroundColor: '#ffffff' } },
+  table: { width: 420, height: 160, content: { tableData: [['Header 1', 'Header 2', 'Header 3'], ['', '', ''], ['', '', '']] }, style: { fontSize: 14, color: '#1a1a1a', borderColor: '#d1d5db', borderWidth: 1, backgroundColor: '#ffffff' } },
+};
 
 export default function EditorPage() {
   const params = useParams();
@@ -29,7 +41,10 @@ export default function EditorPage() {
   });
   const [history] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
-  const savingRef = useRef(false);
+  // Per-element trailing debounce so rapid edits (e.g. typing into a table
+  // cell) accumulate and the latest value is always persisted.
+  const pendingSaves = useRef<Record<string, Partial<SlideElement>>>({});
+  const saveTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   // Load deck
   useEffect(() => {
@@ -52,8 +67,19 @@ export default function EditorPage() {
     return el ? (typeof el.content === 'string' ? JSON.parse(el.content) : el.content) : {};
   }, [slides, editorState.selectedSlideId]);
 
-  const updateElement = useCallback(async (elementId: string, updates: Partial<SlideElement>) => {
-    const newSlides = slides.map(s => {
+  const flushSave = useCallback((elementId: string) => {
+    const body = pendingSaves.current[elementId];
+    if (!body) return;
+    delete pendingSaves.current[elementId];
+    fetch(`/api/elements/${elementId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  }, []);
+
+  const updateElement = useCallback((elementId: string, updates: Partial<SlideElement>) => {
+    setSlides(prev => prev.map(s => {
       if (s.id !== editorState.selectedSlideId) return s;
       return {
         ...s,
@@ -65,21 +91,32 @@ export default function EditorPage() {
           return merged;
         }),
       };
-    });
-    setSlides(newSlides);
+    }));
 
-    // Debounced API save
-    if (savingRef.current) return;
-    savingRef.current = true;
-    setTimeout(async () => {
-      await fetch(`/api/elements/${elementId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+    // Accumulate the pending payload (deep-merging style/content) and reset the
+    // debounce timer, so every keystroke survives and only one save is sent
+    // once edits settle.
+    const prevPending = pendingSaves.current[elementId] || {};
+    const nextPending: Partial<SlideElement> = { ...prevPending, ...updates };
+    if (updates.style) nextPending.style = { ...(prevPending.style || {}), ...updates.style };
+    if (updates.content) nextPending.content = { ...(prevPending.content || {}), ...updates.content };
+    pendingSaves.current[elementId] = nextPending;
+
+    clearTimeout(saveTimers.current[elementId]);
+    saveTimers.current[elementId] = setTimeout(() => flushSave(elementId), 300);
+  }, [editorState.selectedSlideId, flushSave]);
+
+  // Flush any pending edits if the editor unmounts before the debounce fires.
+  useEffect(() => {
+    const timers = saveTimers.current;
+    const pending = pendingSaves.current;
+    return () => {
+      Object.keys(pending).forEach(id => {
+        clearTimeout(timers[id]);
+        flushSave(id);
       });
-      savingRef.current = false;
-    }, 300);
-  }, [slides, editorState.selectedSlideId]);
+    };
+  }, [flushSave]);
 
   const handleUndo = useCallback(() => {
     if (historyIndex <= 0) return;
@@ -170,30 +207,17 @@ export default function EditorPage() {
     const x = (e.clientX - rect.left) / editorState.zoom;
     const y = (e.clientY - rect.top) / editorState.zoom;
 
+    const d = ELEMENT_DEFAULTS[editorState.mode] ?? ELEMENT_DEFAULTS.text;
     const newElement: Partial<SlideElement> = {
       slide_id: editorState.selectedSlideId!,
       type: editorState.mode,
       x: Math.max(0, Math.min(SLIDE_WIDTH - 100, x - 50)),
       y: Math.max(0, Math.min(SLIDE_HEIGHT - 50, y - 25)),
-      width: editorState.mode === 'line' ? 200 : editorState.mode === 'chart' ? 480 : 300,
-      height: editorState.mode === 'line' ? 4 : editorState.mode === 'heading' ? 60 : editorState.mode === 'chart' ? 300 : 50,
+      width: d.width,
+      height: d.height,
       z_index: (slides.find(s => s.id === editorState.selectedSlideId)?.elements?.length || 0) + 1,
-      content: editorState.mode === 'image'
-        ? { src: '', alt: '' }
-        : editorState.mode === 'shape'
-        ? { shapeType: 'rect' }
-        : editorState.mode === 'chart'
-        ? { chartType: 'bar', chartData: { labels: ['Q1', 'Q2', 'Q3', 'Q4'], datasets: [{ label: 'Revenue', data: [42, 58, 51, 73] }] } }
-        : { text: editorState.mode === 'heading' ? 'Heading' : 'Text' },
-      style: editorState.mode === 'heading'
-        ? { fontSize: 36, color: '#1a1a1a', fontWeight: 'bold' }
-        : editorState.mode === 'shape'
-        ? { backgroundColor: '#3B82F6', borderRadius: 8 }
-        : editorState.mode === 'line'
-        ? { borderColor: '#000000', borderWidth: 2 }
-        : editorState.mode === 'chart'
-        ? { backgroundColor: '#ffffff' }
-        : { fontSize: 18, color: '#333333' },
+      content: d.content,
+      style: d.style,
     };
 
     fetch('/api/elements', {
