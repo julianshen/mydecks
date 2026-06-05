@@ -194,6 +194,7 @@ async function drawElement(pdfDoc: PDFDocument, page: PDFPage, regular: PDFFont,
 
 const FETCH_TIMEOUT_MS = 5000;
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+const MAX_REDIRECTS = 4;
 
 // Best-effort SSRF guard: reject loopback/link-local/private literals so a
 // deck can't make the server fetch internal hosts or cloud metadata. This does
@@ -211,6 +212,28 @@ function isBlockedHost(hostname: string): boolean {
   return false;
 }
 
+// Follow redirects manually so every hop's host is re-checked against the SSRF
+// guard — a fetch with default redirect handling could be bounced from an
+// allowed host to a private/link-local one and bypass the initial check.
+async function safeFetchImage(initial: string): Promise<Response | null> {
+  let target = initial;
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    let url: URL;
+    try { url = new URL(target); } catch { return null; }
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+    if (isBlockedHost(url.hostname)) return null;
+    const res = await fetch(target, { redirect: 'manual', signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    if (res.status >= 300 && res.status < 400) {
+      const location = res.headers.get('location');
+      if (!location) return null;
+      target = new URL(location, target).toString(); // resolve relative redirects, re-validate next loop
+      continue;
+    }
+    return res;
+  }
+  return null; // too many redirects
+}
+
 async function loadImage(pdfDoc: PDFDocument, src: string) {
   try {
     let bytes: Uint8Array;
@@ -223,11 +246,8 @@ async function loadImage(pdfDoc: PDFDocument, src: string) {
       bytes = Buffer.from(src.slice(comma + 1), meta.includes('base64') ? 'base64' : 'utf8');
       isPng = meta.includes('png');
     } else if (src.startsWith('http://') || src.startsWith('https://')) {
-      let url: URL;
-      try { url = new URL(src); } catch { return null; }
-      if (isBlockedHost(url.hostname)) return null;
-      const res = await fetch(src, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
-      if (!res.ok) return null;
+      const res = await safeFetchImage(src);
+      if (!res || !res.ok) return null;
       if (Number(res.headers.get('content-length') || 0) > MAX_IMAGE_BYTES) return null;
       const buf = Buffer.from(await res.arrayBuffer());
       if (buf.byteLength > MAX_IMAGE_BYTES) return null;
