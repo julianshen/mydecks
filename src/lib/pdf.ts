@@ -201,9 +201,23 @@ const MAX_REDIRECTS = 4;
 // not resolve DNS, so a hostname pointing at a private IP can still slip
 // through — full protection needs connect-time IP checks.
 function isBlockedHost(hostname: string): boolean {
-  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, '').split('%')[0]; // strip [] and IPv6 zone id
   if (h === 'localhost' || h.endsWith('.local') || h.endsWith('.internal')) return true;
-  if (h === '0.0.0.0' || h === '::1') return true;
+
+  // IPv6 literals
+  if (h.includes(':')) {
+    if (h === '::1' || h === '::') return true;              // loopback / unspecified
+    // IPv4-mapped/embedded (e.g. ::ffff:10.0.0.1) — validate the embedded IPv4
+    const mapped = h.match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+    if (mapped) return isBlockedHost(mapped[1]);
+    const first = parseInt(h.split(':')[0] || '0', 16);
+    if (first >= 0xfc00 && first <= 0xfdff) return true;     // unique local fc00::/7
+    if (first >= 0xfe80 && first <= 0xfebf) return true;     // link-local fe80::/10
+    return false;
+  }
+
+  // IPv4 literals
+  if (h === '0.0.0.0') return true;
   if (/^127\./.test(h)) return true;                        // loopback
   if (/^10\./.test(h)) return true;                         // private
   if (/^192\.168\./.test(h)) return true;                   // private
@@ -242,8 +256,13 @@ async function loadImage(pdfDoc: PDFDocument, src: string) {
       const comma = src.indexOf(',');
       if (comma === -1) return null;
       const meta = src.slice(5, comma);
+      const payload = src.slice(comma + 1);
+      // Bound the decode the same way the HTTP branch bounds downloads. Base64
+      // expands ~4/3, so reject by encoded length first, then by decoded size.
+      if (payload.length > MAX_IMAGE_BYTES * 1.4) return null;
       // Buffer is a Uint8Array subclass — use it directly, no extra copy.
-      bytes = Buffer.from(src.slice(comma + 1), meta.includes('base64') ? 'base64' : 'utf8');
+      bytes = Buffer.from(payload, meta.includes('base64') ? 'base64' : 'utf8');
+      if (bytes.byteLength > MAX_IMAGE_BYTES) return null;
       isPng = meta.includes('png');
     } else if (src.startsWith('http://') || src.startsWith('https://')) {
       const res = await safeFetchImage(src);
