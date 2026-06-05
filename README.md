@@ -8,7 +8,8 @@ A professional, self-hosted presentation editor built with Next.js, React, and S
 - **Rich Elements**: Text, headings, images, shapes (rectangles, circles), and lines
 - **Multiple Layouts**: Title, title+content, two-column, image+text, and blank layouts
 - **Live Presentation Mode**: Full-screen presentation with keyboard navigation (arrow keys, space, page up/down)
-- **PPTX Export**: Export your decks to PowerPoint format
+- **PPTX & PDF Export**: Export your decks to PowerPoint or PDF
+- **MCP Server**: Lets AI agents generate decks programmatically and open them in the editor (see below)
 - **AI-LLM Friendly Interface**: Semantic HTML with `data-testid` attributes throughout for easy automation
 - **No Login Required**: Works entirely locally with SQLite storage
 
@@ -54,6 +55,37 @@ npm start
 - **Arrow Left / Page Up**: Previous slide
 - **F**: Toggle fullscreen
 - **Escape**: Exit presentation
+
+## MCP Server (AI agents)
+
+MyDecks exposes a [Model Context Protocol](https://modelcontextprotocol.io) server over streamable HTTP so an AI agent can generate decks and hand back a URL to open in the editor.
+
+- **Endpoint**: `POST http://localhost:3000/api/mcp` (the running app — no separate process)
+- **Editor/auto-open base URL**: set `MYDECKS_BASE_URL` if the app isn't on `http://localhost:3000`. `open_in_browser` only launches a browser when the server runs on your own machine.
+
+Point an MCP client at the endpoint, e.g.:
+
+```json
+{
+  "mcpServers": {
+    "mydecks": { "type": "http", "url": "http://localhost:3000/api/mcp" }
+  }
+}
+```
+
+### Tools
+
+| Tool | Purpose |
+|------|---------|
+| `list_decks` | List decks (id, title, timestamps) |
+| `get_deck` | Get a deck with all slides and elements |
+| `create_deck` | Create a deck with a title slide → returns `editorUrl` |
+| `add_slide` | Append a slide (`blank` or a named layout) |
+| `add_element` | Add an element (text, heading, image, shape, line, chart, table) at 960×540 coordinates |
+| `generate_deck` | Build a whole deck from an outline in one call → returns `editorUrl` |
+| `open_in_browser` | Return (and try to launch) a deck's editor or presenter URL |
+
+`generate_deck` takes a `title` and a `slides[]` outline, where each slide has an optional `layout`/`background_color` and an `elements[]` list. Each element accepts `type`, a `text` shorthand (or a `content` object for images/tables/charts), `x`/`y`/`width`/`height`, and a `style` object — then returns the deck id and an `editorUrl` you can open to edit.
 
 ## Project Structure
 
