@@ -91,11 +91,14 @@ function drawTextBox(page: PDFPage, regular: PDFFont, bold: PDFFont, el: ExportE
   let baseline = H - el.y - padding - size;
   for (const line of lines) {
     if (baseline < boxBottom) break; // overflowed the box
-    const w = font.widthOfTextAtSize(line, size);
+    // Guard against a single unbroken token (or space-less script) wider than
+    // the box — truncate it so it can't draw past the element bounds.
+    const fitted = fit(font, line, size, maxWidth);
+    const w = font.widthOfTextAtSize(fitted, size);
     let x = el.x + padding;
     if (align === 'center') x = el.x + (el.width - w) / 2;
     else if (align === 'right') x = el.x + el.width - padding - w;
-    page.drawText(line, { x, y: baseline, size, font, color, opacity });
+    page.drawText(fitted, { x, y: baseline, size, font, color, opacity });
     baseline -= lineHeight;
   }
 }

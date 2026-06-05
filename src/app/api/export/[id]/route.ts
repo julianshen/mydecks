@@ -37,14 +37,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const safeName = deck.title.replace(/[^a-zA-Z0-9]/g, '_');
 
   if (format === 'pdf') {
+    // Malformed persisted JSON must not abort the whole export — fall back to
+    // an empty object so buildDeckPdf can still skip/handle the element.
+    const safeParse = (raw: unknown): Record<string, unknown> => {
+      if (typeof raw !== 'string') return {};
+      try {
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed as Record<string, unknown> : {};
+      } catch {
+        return {};
+      }
+    };
     const deckSlides = slides.map(slide => {
       const elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(slide.id) as ElementRow[];
       return {
         background_color: slide.background_color,
         elements: elements.map(el => ({
           type: el.type,
-          content: JSON.parse(el.content || '{}'),
-          style: JSON.parse(el.style || '{}'),
+          content: safeParse(el.content),
+          style: safeParse(el.style),
           x: el.x, y: el.y, width: el.width, height: el.height,
         })),
       };
