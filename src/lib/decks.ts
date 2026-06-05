@@ -150,9 +150,12 @@ export function deleteDeck(id: string): boolean {
   return getDb().prepare('DELETE FROM decks WHERE id = ?').run(id).changes > 0;
 }
 
+// Note: slide ordering is intentionally NOT updatable here — setting a single
+// slide's sort_order in isolation can create duplicate positions. Use
+// reorderSlides() (transactional, whole-deck) instead.
 export function updateSlide(
   id: string,
-  updates: { layout?: string; background_color?: string; sort_order?: number; background_image?: string | null },
+  updates: { layout?: string; background_color?: string; background_image?: string | null },
 ): Row | null {
   const db = getDb();
   if (!db.prepare('SELECT 1 FROM slides WHERE id = ?').get(id)) return null;
@@ -160,7 +163,6 @@ export function updateSlide(
   const values: (string | number | null)[] = [];
   if (updates.layout !== undefined) { fields.push('layout = ?'); values.push(updates.layout); }
   if (updates.background_color !== undefined) { fields.push('background_color = ?'); values.push(updates.background_color); }
-  if (updates.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(updates.sort_order); }
   if (updates.background_image !== undefined) { fields.push('background_image = ?'); values.push(updates.background_image); }
   if (fields.length) {
     fields.push('updated_at = CURRENT_TIMESTAMP');

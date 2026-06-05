@@ -166,16 +166,15 @@ const handler = createMcpHandler(
 
     server.tool(
       'update_slide',
-      'Update a slide\'s layout, background color/image, or sort order (only the provided fields change).',
+      'Update a slide\'s layout or background color/image (only the provided fields change). To change ordering, use reorder_slides.',
       {
         slideId: z.string(),
         layout: z.enum(LAYOUTS).optional(),
         background_color: z.string().optional(),
         background_image: z.string().nullable().optional(),
-        sort_order: z.number().optional(),
       },
-      async ({ slideId, layout, background_color, background_image, sort_order }) => {
-        const slide = updateSlide(slideId, { layout, background_color, background_image, sort_order });
+      async ({ slideId, layout, background_color, background_image }) => {
+        const slide = updateSlide(slideId, { layout, background_color, background_image });
         return slide ? ok({ slideId: String(slide.id) }) : fail(`Slide ${slideId} not found`);
       },
     );

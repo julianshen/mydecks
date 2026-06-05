@@ -3,24 +3,30 @@ import { test, expect, type APIRequestContext } from '@playwright/test';
 const MCP = '/api/mcp';
 const headers = { 'content-type': 'application/json', accept: 'application/json, text/event-stream' };
 
-// The streamable-HTTP transport replies as an SSE frame; pull the JSON out.
+// The streamable-HTTP transport replies as SSE; parse per event and return the
+// JSON from the final data frame (a response may include preceding events).
 function parseSse(body: string) {
-  const data = body
-    .split('\n')
-    .filter(l => l.startsWith('data: '))
-    .map(l => l.slice('data: '.length))
-    .join('');
-  return JSON.parse(data);
+  const frames = body
+    .split('\n\n')
+    .map(frame => frame.split('\n').filter(l => l.startsWith('data: ')).map(l => l.slice('data: '.length)).join(''))
+    .filter(Boolean);
+  if (!frames.length) throw new Error(`No SSE data frame found. Raw body: ${body}`);
+  return JSON.parse(frames[frames.length - 1]);
 }
 
 let rpcId = 100;
 // Call an MCP tool and return its parsed structured result (the JSON text).
+// Surfaces HTTP/RPC/tool errors directly so failures stay actionable.
 async function callTool(request: APIRequestContext, name: string, args: Record<string, unknown>) {
   const resp = await request.post(MCP, {
     headers,
     data: { jsonrpc: '2.0', id: rpcId++, method: 'tools/call', params: { name, arguments: args } },
   });
-  const msg = parseSse(await resp.text());
+  const raw = await resp.text();
+  if (!resp.ok()) throw new Error(`MCP HTTP ${resp.status()} for ${name}: ${raw}`);
+  const msg = parseSse(raw);
+  if (msg.error) throw new Error(`MCP RPC error for ${name}: ${JSON.stringify(msg.error)}`);
+  if (msg.result?.isError) throw new Error(`MCP tool error for ${name}: ${msg.result.content?.[0]?.text ?? 'unknown'}`);
   return JSON.parse(msg.result.content[0].text);
 }
 
