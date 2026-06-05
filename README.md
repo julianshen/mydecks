@@ -80,9 +80,17 @@ Point an MCP client at the endpoint, e.g.:
 | `list_decks` | List decks (id, title, timestamps) |
 | `get_deck` | Get a deck with all slides and elements |
 | `create_deck` | Create a deck with a title slide → returns `editorUrl` |
+| `update_deck` | Update a deck's title/theme |
+| `delete_deck` | Delete a deck (and its slides/elements) |
 | `add_slide` | Append a slide (`blank` or a named layout) |
+| `update_slide` | Update a slide's layout, background, or sort order |
+| `delete_slide` | Delete a slide and its elements |
+| `reorder_slides` | Reorder a deck's slides |
 | `add_element` | Add an element (text, heading, image, shape, line, chart, table) at 960×540 coordinates |
+| `update_element` | Update an element's text/content, position, size, rotation, z-order, or style |
+| `delete_element` | Delete an element |
 | `generate_deck` | Build a whole deck from an outline in one call → returns `editorUrl` |
+| `export_deck` | Get a `.pptx`/`.pdf` download URL for a deck |
 | `open_in_browser` | Return (and try to launch) a deck's editor or presenter URL |
 
 `generate_deck` takes a `title` and a `slides[]` outline, where each slide has an optional `layout`/`background_color` and an `elements[]` list. Each element accepts `type`, a `text` shorthand (or a `content` object for images/tables/charts), `x`/`y`/`width`/`height`, and a `style` object — then returns the deck id and an `editorUrl` you can open to edit.

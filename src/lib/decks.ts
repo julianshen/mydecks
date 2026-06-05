@@ -129,3 +129,105 @@ export function addElement(input: ElementInput) {
 export function deleteSlide(id: string): boolean {
   return getDb().prepare('DELETE FROM slides WHERE id = ?').run(id).changes > 0;
 }
+
+type Row = Record<string, unknown>;
+
+export function updateDeck(id: string, updates: { title?: string; theme?: string }): Row | null {
+  const db = getDb();
+  if (!db.prepare('SELECT 1 FROM decks WHERE id = ?').get(id)) return null;
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+  if (updates.title !== undefined) { fields.push('title = ?'); values.push(updates.title); }
+  if (updates.theme !== undefined) { fields.push('theme = ?'); values.push(updates.theme); }
+  if (fields.length) {
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    db.prepare(`UPDATE decks SET ${fields.join(', ')} WHERE id = ?`).run(...values, id);
+  }
+  return db.prepare('SELECT * FROM decks WHERE id = ?').get(id) as Row;
+}
+
+export function deleteDeck(id: string): boolean {
+  return getDb().prepare('DELETE FROM decks WHERE id = ?').run(id).changes > 0;
+}
+
+export function updateSlide(
+  id: string,
+  updates: { layout?: string; background_color?: string; sort_order?: number; background_image?: string | null },
+): Row | null {
+  const db = getDb();
+  if (!db.prepare('SELECT 1 FROM slides WHERE id = ?').get(id)) return null;
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+  if (updates.layout !== undefined) { fields.push('layout = ?'); values.push(updates.layout); }
+  if (updates.background_color !== undefined) { fields.push('background_color = ?'); values.push(updates.background_color); }
+  if (updates.sort_order !== undefined) { fields.push('sort_order = ?'); values.push(updates.sort_order); }
+  if (updates.background_image !== undefined) { fields.push('background_image = ?'); values.push(updates.background_image); }
+  if (fields.length) {
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    db.prepare(`UPDATE slides SET ${fields.join(', ')} WHERE id = ?`).run(...values, id);
+  }
+  const slide = db.prepare('SELECT * FROM slides WHERE id = ?').get(id) as Row;
+  slide.elements = db.prepare('SELECT * FROM elements WHERE slide_id = ? ORDER BY z_index').all(id);
+  return slide;
+}
+
+/** Sets each slide's sort_order to its index in `orderedIds`. Requires the ids
+ *  to be exactly the deck's slides (a permutation); returns false otherwise. */
+export function reorderSlides(deckId: string, orderedIds: string[]): boolean {
+  const db = getDb();
+  const current = (db.prepare('SELECT id FROM slides WHERE deck_id = ?').all(deckId) as { id: string }[]).map(r => r.id);
+  const set = new Set(current);
+  if (orderedIds.length !== current.length || !orderedIds.every(id => set.has(id))) return false;
+  const upd = db.prepare('UPDATE slides SET sort_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
+  db.transaction((ids: string[]) => ids.forEach((id, i) => upd.run(i, id)))(orderedIds);
+  return true;
+}
+
+export interface ElementUpdate {
+  content?: Record<string, unknown>;
+  text?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  rotation?: number;
+  zIndex?: number;
+  style?: Record<string, unknown>;
+}
+
+export function updateElement(id: string, updates: ElementUpdate): Row | null {
+  const db = getDb();
+  const existing = db.prepare('SELECT * FROM elements WHERE id = ?').get(id) as Row | undefined;
+  if (!existing) return null;
+  const fields: string[] = [];
+  const values: (string | number | null)[] = [];
+
+  // `text` is a shorthand that merges into content; a full `content` replaces it.
+  if (updates.content !== undefined || updates.text !== undefined) {
+    let content: Record<string, unknown>;
+    if (updates.content !== undefined) {
+      content = updates.text !== undefined ? { ...updates.content, text: updates.text } : updates.content;
+    } else {
+      const cur = typeof existing.content === 'string' ? JSON.parse(existing.content) : (existing.content ?? {});
+      content = { ...cur, text: updates.text };
+    }
+    fields.push('content = ?'); values.push(JSON.stringify(content));
+  }
+  if (updates.x !== undefined) { fields.push('x = ?'); values.push(updates.x); }
+  if (updates.y !== undefined) { fields.push('y = ?'); values.push(updates.y); }
+  if (updates.width !== undefined) { fields.push('width = ?'); values.push(updates.width); }
+  if (updates.height !== undefined) { fields.push('height = ?'); values.push(updates.height); }
+  if (updates.rotation !== undefined) { fields.push('rotation = ?'); values.push(updates.rotation); }
+  if (updates.zIndex !== undefined) { fields.push('z_index = ?'); values.push(updates.zIndex); }
+  if (updates.style !== undefined) { fields.push('style = ?'); values.push(JSON.stringify(updates.style)); }
+
+  if (fields.length) {
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    db.prepare(`UPDATE elements SET ${fields.join(', ')} WHERE id = ?`).run(...values, id);
+  }
+  return db.prepare('SELECT * FROM elements WHERE id = ?').get(id) as Row;
+}
+
+export function deleteElement(id: string): boolean {
+  return getDb().prepare('DELETE FROM elements WHERE id = ?').run(id).changes > 0;
+}
